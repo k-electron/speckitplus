@@ -16,9 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automatically provisions and updates a `lifecycle.md` document in every feature (`specs/###-*/`), bug triage (`.specify/bugs/<slug>/`), and idea assessment (`.specify/assessments/<slug>/`) directory.
   - Generates machine-readable YAML frontmatter, human-readable milestone summaries, dynamic progress metrics, and interactive Mermaid state diagrams.
 - **Multi-Track SDLC Support**:
-  - Feature Track (`SPECIFIED`, `CLARIFIED`, `CHECKLISTED`, `PLANNED`, `TASKED`, `ANALYZED`, `IMPLEMENTING`, `CONVERGED`).
-  - Bug Triage Track (`ASSESSED`, `FIXING`, `TESTED`).
-  - Idea Assessment Track (`INTAKE`, `RESEARCHING`, `DEFINING`, `SHAPING`, `DECIDED`).
+  - Feature Track (`SPECIFIED`, `CLARIFIED`, `CHECKLISTED`, `PLANNED`, `TASKED`, `ISSUES_SYNCED`, `ANALYZED`, `IMPLEMENTING`, `CONVERGED`).
+  - Bug Triage Track (`ASSESSED`, `FIXED`, `VERIFIED`, `ESCALATED_TO_FEATURE`).
+  - Idea Assessment Track (`INTAKE`, `RESEARCHED`, `DEFINED`, `SHAPED`, `DECIDED_GO`, `DECIDED_KILL`).
   - Extensible Custom Open Track with dynamic phase registration.
 - **Crash & Interruption Detection**:
   - Pre-command hook marks runs as `IN_PROGRESS` with command metadata and timestamps.

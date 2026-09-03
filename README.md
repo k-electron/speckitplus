@@ -38,17 +38,22 @@ graph TD
         Tasks["tasks.md Checkboxes"] --> Prog["Real-Time Completion %"]
     end
 
-    subgraph Core["Lifecycle Engine (Python 3 stdlib)"]
-        Start --> Core
-        Complete --> Core
-        Sense --> Core
-        Prog --> Core
-        Core --> LivingDoc["Living Artifact (specs/<slug>/lifecycle.md)"]
-        Core --> Overview["Repository Dashboard (.specify/lifecycle-overview.md)"]
+    Core["Lifecycle Engine (Python 3 stdlib)"]
+
+    subgraph Storage["Persisted State Artifacts"]
+        LivingDoc["Living Artifact (specs/[slug]/lifecycle.md)"]
+        Overview["Repository Dashboard (.specify/lifecycle-overview.md)"]
     end
+
+    Start --> Core
+    Complete --> Core
+    Sense --> Core
+    Prog --> Core
+    Core --> LivingDoc
+    Core --> Overview
 ```
 
-1. **Active Engine**: Intercepts Spec Kit commands (`specify`, `plan`, `tasks`, `implement`, `converge`, plus bug and assessment tracks) to log start/end timestamps, elapsed durations, and exit codes.
+1. **Active Engine**: Intercepts Spec Kit commands across all milestones—core phases (`specify`, `plan`, `tasks`, `implement`, `converge`), optional refinement phases (`clarify`, `checklist`, `taskstoissues`, `analyze`), plus bug triage and idea assessment tracks—to log start/end timestamps, elapsed durations, exit codes, and phase transitions.
 2. **Passive Engine**: Inspects filesystem mtimes to detect conversational edits in chat or IDEs without slash commands, and calculates live `- [x]` completion ratios from `tasks.md`.
 3. **State Reconciliation**: If a `lifecycle.md` is deleted or pre-dates extension installation, scanning existing artifacts (`spec.md`, `plan.md`, `tasks.md`, `checklists/`) automatically reconstructs the full milestone timeline.
 
@@ -153,7 +158,7 @@ Compile or view repository-wide progress across all features, bugs, and idea ass
 /speckit-lifecycle-overview
 ```
 
-This compiles a clean markdown dashboard saved to [`.specify/lifecycle-overview.md`](config-template.yml):
+This compiles a clean markdown dashboard saved to `.specify/lifecycle-overview.md`:
 
 ```markdown
 # Repository SDLC Overview
@@ -261,12 +266,12 @@ graph LR
 
 ## Milestone Timeline
 
-| Phase | Command | Status | Started | Completed | Duration | Notes |
+| Phase | Command / Source | Status | Started | Completed | Duration | Notes |
 |---|---|---|---|---|---|---|
-| SPECIFIED | speckit.specify | COMPLETED | 10:00:00 | 10:02:30 | 2m 30s | Initial specification |
-| PLANNED | speckit.plan | COMPLETED | 10:15:00 | 10:20:00 | 5m 00s | Architecture approved |
-| TASKED | speckit.tasks | COMPLETED | 10:25:00 | 10:28:00 | 3m 00s | 10 tasks generated |
-| IMPLEMENTING | speckit.implement | IN_PROGRESS | 10:30:00 | - | - | 6/10 tasks completed |
+| **Specify** | `/speckit-specify` | `COMPLETED` | 10:00:00 | 10:02:30 | 2m 30s | Initial specification |
+| **Plan** | `/speckit-plan` | `COMPLETED` | 10:15:00 | 10:20:00 | 5m 00s | Architecture approved |
+| **Tasks** | `/speckit-tasks` | `COMPLETED` | 10:25:00 | 10:28:00 | 3m 00s | 10 tasks generated |
+| **Implement** | `/speckit-implement` | `IN_PROGRESS` | 10:30:00 | — | — | 6/10 tasks completed |
 ```
 
 ---
@@ -274,7 +279,10 @@ graph LR
 ## Key Capabilities
 
 - **Crash & Interruption Recovery**: Pre-hooks log `status: IN_PROGRESS`. If an agent or session halts unexpectedly, the next query flags the event as `INTERRUPTED` and presents clean resumption guidance.
-- **Multi-Track Support**: Native lifecycle taxonomies for **Features** (`SPECIFIED` &rarr; `CONVERGED`), **Bug Triage** (`ASSESSED` &rarr; `VERIFIED` or `ESCALATED_TO_FEATURE`), and **Idea Assessments** (`INTAKE` &rarr; `DECIDED_GO` / `DECIDED_KILL`).
+- **Multi-Track Support**: Native lifecycle taxonomies across three tracks:
+  - **Features** (`specs/<slug>/lifecycle.md`): Core flow (`SPECIFIED` &rarr; `PLANNED` &rarr; `TASKED` &rarr; `IMPLEMENTING` &rarr; `CONVERGED`) plus optional refinement phases (`CLARIFIED`, `CHECKLISTED`, `ISSUES_SYNCED`, `ANALYZED`).
+  - **Bug Triage** (`.specify/bugs/<slug>/lifecycle.md`): `ASSESSED` &rarr; `FIXED` &rarr; `VERIFIED` (or hand-off via `ESCALATED_TO_FEATURE`).
+  - **Idea Assessments** (`.specify/assessments/<slug>/lifecycle.md`): `INTAKE` &rarr; `RESEARCHED` &rarr; `DEFINED` &rarr; `SHAPED` &rarr; `DECIDED_GO` / `DECIDED_KILL`.
 - **Soft Drift Advisories**: Upstream edits increment revisions and flag drift between artifacts without destroying downstream implementation files.
 - **Task Checkbox Synchronization**: Scans `- [ ]` / `- [x]` items dynamically on every run to keep progress percentages accurate.
 - **Zero Dependencies**: Pure Python 3 standard library (`json`, `pathlib`, `argparse`, `datetime`) and POSIX bash. No virtual environments, pip packages, or npm modules required.
