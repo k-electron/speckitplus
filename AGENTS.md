@@ -21,7 +21,8 @@ SpecKitPlus is an official extension for [Spec Kit](https://github.com/github/sp
 ├── scripts/
 │   ├── hook-pre-command.sh     # Fast pre-execution hook (IN_PROGRESS logger)
 │   ├── hook-post-command.sh    # Post-execution hook (COMPLETED logger)
-│   └── lifecycle-engine.py     # Pure-Python state machine, YAML parser & renderer
+│   ├── lifecycle-engine.py     # Pure-Python state machine, YAML parser & renderer
+│   └── package-release.sh      # Deterministic distribution packager & checksum generator
 ├── templates/
 │   └── lifecycle-template.md   # Default scaffold for new lifecycle artifacts
 └── tests/
