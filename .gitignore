@@ -48,8 +48,9 @@ release-notes.md
 
 # Spec Kit machine-local state & caches (defense-in-depth)
 .specify/feature.json
-.specify/extensions/.cache/
-.specify/extensions/*/local-config.yml
+.specify/extensions.yml
+.specify/extensions/
+.agents/skills/speckit-lifecycle-*/
 *.local.yml
 *.local.json
 
