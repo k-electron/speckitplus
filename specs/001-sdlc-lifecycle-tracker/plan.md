@@ -18,7 +18,7 @@ Build an official Spec Kit extension that provides a persistent, filesystem-back
 
 **Storage**: Filesystem-only. Markdown artifacts with YAML frontmatter (`specs/<slug>/lifecycle.md`, `.specify/bugs/<slug>/lifecycle.md`, `.specify/assessments/<slug>/lifecycle.md`, and `.specify/lifecycle-overview.md`).
 
-**Testing**: Automated contract tests (`bats` / python `unittest`) verifying manifest schema validation, hook execution timing, interruption detection, passive sensing, and `--dev` installation.
+**Testing**: Python 3 standard library `unittest` (contract tests in `tests/contract/`) and portable POSIX shell test scripts (`tests/integration/*.sh`). Zero external test framework dependencies (no `bats` or `pytest` required).
 
 **Target Platform**: macOS Darwin (Apple Silicon & Intel) and Linux (Ubuntu, Debian, Alpine).
 
@@ -69,6 +69,7 @@ speckitplus/
 ├── LICENSE                    # MIT License
 ├── CHANGELOG.md               # Version history & release notes
 ├── config-template.yml        # Configuration options template
+├── catalog-submission.json    # Pre-formatted community catalog entry (catalog.community.json schema)
 │
 ├── commands/                  # Spec Kit command definitions
 │   ├── speckit.lifecycle.status.md
