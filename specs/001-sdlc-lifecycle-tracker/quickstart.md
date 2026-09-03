@@ -7,9 +7,11 @@
 ## 1. Installation
 
 ### Method A: Local Development Install
-From the root of this extension repository:
+In your target project workspace (referencing this extension directory):
 ```bash
-specify extension add lifecycle --dev .
+specify extension add /path/to/speckitplus --dev
+# Or from the extension repository:
+specify extension add . --dev
 ```
 
 ### Method B: Install from GitHub Release Archive

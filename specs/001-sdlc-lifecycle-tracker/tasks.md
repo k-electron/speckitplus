@@ -10,10 +10,10 @@
 
 **Purpose**: Initialize extension directory structure, root manifest skeleton, and core scaffolding templates.
 
-- [ ] T001 Initialize extension package directory structure (`commands/`, `scripts/`, `templates/`, `tests/contract/`, `tests/integration/`)
-- [ ] T002 [P] Create initial extension manifest skeleton conforming to Spec Kit Schema 1.0 in `extension.yml`
-- [ ] T003 [P] Create default lifecycle artifact scaffold in `templates/lifecycle-template.md`
-- [ ] T004 [P] Create user configuration template in `config-template.yml`
+- [x] T001 Initialize extension package directory structure (`commands/`, `scripts/`, `templates/`, `tests/contract/`, `tests/integration/`)
+- [x] T002 [P] Create initial extension manifest skeleton conforming to Spec Kit Schema 1.0 in `extension.yml`
+- [x] T003 [P] Create default lifecycle artifact scaffold in `templates/lifecycle-template.md`
+- [x] T004 [P] Create user configuration template in `config-template.yml`
 
 ---
 
@@ -23,11 +23,11 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T005 Create manifest schema contract test in `tests/contract/test_manifest_schema.py`
-- [ ] T006 [P] Create lifecycle frontmatter schema contract test in `tests/contract/test_lifecycle_schema.py`
-- [ ] T007 Implement YAML frontmatter parser and serializer in `scripts/lifecycle-engine.py`
-- [ ] T008 Implement multi-track target directory resolver (resolving `specs/`, `.specify/bugs/`, `.specify/assessments/`) in `scripts/lifecycle-engine.py`
-- [ ] T009 Implement Markdown renderer (status badges, summary card, milestone table) in `scripts/lifecycle-engine.py`
+- [x] T005 Create manifest schema contract test in `tests/contract/test_manifest_schema.py`
+- [x] T006 [P] Create lifecycle frontmatter schema contract test in `tests/contract/test_lifecycle_schema.py`
+- [x] T007 Implement YAML frontmatter parser and serializer in `scripts/lifecycle-engine.py`
+- [x] T008 Implement multi-track target directory resolver (resolving `specs/`, `.specify/bugs/`, `.specify/assessments/`) in `scripts/lifecycle-engine.py`
+- [x] T009 Implement Markdown renderer (status badges, summary card, milestone table) in `scripts/lifecycle-engine.py`
 
 **Checkpoint**: Core engine and contract tests ready — user story implementation can now begin.
 
@@ -40,12 +40,12 @@
 **Independent Test**: Execute a feature, bug, or assessment milestone and verify `lifecycle.md` is created with valid YAML frontmatter, track tag, timestamps, and milestone table.
 
 ### Tests for User Story 1
-- [ ] T010 [P] [US1] Create integration test for multi-track initialization in `tests/integration/test_multitrack_init.sh`
+- [x] T010 [P] [US1] Create integration test for multi-track initialization in `tests/integration/test_multitrack_init.sh`
 
 ### Implementation for User Story 1
-- [ ] T011 [US1] Implement track-specific lifecycle initializers (`feature`, `bug`, `assessment`, `custom`) in `scripts/lifecycle-engine.py`
-- [ ] T012 [US1] Implement post-command hook handler in `scripts/hook-post-command.sh` to finalize completed milestones with duration and timestamps
-- [ ] T013 [US1] Register `after_*` post-hooks across feature, bug, and idea tracks in `extension.yml`
+- [x] T011 [US1] Implement track-specific lifecycle initializers (`feature`, `bug`, `assessment`, `custom`) in `scripts/lifecycle-engine.py`
+- [x] T012 [US1] Implement post-command hook handler in `scripts/hook-post-command.sh` to finalize completed milestones with duration and timestamps
+- [x] T013 [US1] Register `after_*` post-hooks across feature, bug, and idea tracks in `extension.yml`
 
 **Checkpoint**: User Story 1 is fully functional and independently testable. Features, bugs, and assessments maintain living `lifecycle.md` files upon command completion.
 
@@ -58,12 +58,12 @@
 **Independent Test**: Run pre-hook, simulate process abort before post-hook, and verify the next query flags `INTERRUPTED` with start timestamp.
 
 ### Tests for User Story 2
-- [ ] T014 [P] [US2] Create integration test for interruption detection and crash recovery in `tests/integration/test_interruption_detection.sh`
+- [x] T014 [P] [US2] Create integration test for interruption detection and crash recovery in `tests/integration/test_interruption_detection.sh`
 
 ### Implementation for User Story 2
-- [ ] T015 [US2] Implement pre-command hook handler in `scripts/hook-pre-command.sh` to record `status: IN_PROGRESS` with `started_at`
-- [ ] T016 [US2] Implement unclosed `IN_PROGRESS` detection and `INTERRUPTED` status transition in `scripts/lifecycle-engine.py`
-- [ ] T017 [US2] Register `before_*` pre-hooks across all supported command tracks in `extension.yml`
+- [x] T015 [US2] Implement pre-command hook handler in `scripts/hook-pre-command.sh` to record `status: IN_PROGRESS` with `started_at`
+- [x] T016 [US2] Implement unclosed `IN_PROGRESS` detection and `INTERRUPTED` status transition in `scripts/lifecycle-engine.py`
+- [x] T017 [US2] Register `before_*` pre-hooks across all supported command tracks in `extension.yml`
 
 **Checkpoint**: User Stories 1 AND 2 are complete. Command starts are logged, durations are recorded, and interrupted sessions are surfaced immediately.
 
@@ -76,12 +76,12 @@
 **Independent Test**: Touch `spec.md` after plan creation; verify `lifecycle.md` raises a soft-drift advisory and increments revision count without corrupting downstream files.
 
 ### Tests for User Story 3
-- [ ] T018 [P] [US3] Create integration test for passive artifact sensing and soft drift in `tests/integration/test_passive_sensing.sh`
+- [x] T018 [P] [US3] Create integration test for passive artifact sensing and soft drift in `tests/integration/test_passive_sensing.sh`
 
 ### Implementation for User Story 3
-- [ ] T019 [US3] Implement passive artifact sensing (comparing mtimes of `spec.md`, `plan.md`, `tasks.md` against recorded completion timestamps) in `scripts/lifecycle-engine.py`
-- [ ] T020 [US3] Implement `tasks.md` checkbox parser and completion percentage calculator in `scripts/lifecycle-engine.py`
-- [ ] T021 [US3] Implement dynamic Next Recommended Action computation and soft drift advisory callout in `scripts/lifecycle-engine.py`
+- [x] T019 [US3] Implement passive artifact sensing (comparing mtimes of `spec.md`, `plan.md`, `tasks.md` against recorded completion timestamps) in `scripts/lifecycle-engine.py`
+- [x] T020 [US3] Implement `tasks.md` checkbox parser and completion percentage calculator in `scripts/lifecycle-engine.py`
+- [x] T021 [US3] Implement dynamic Next Recommended Action computation and soft drift advisory callout in `scripts/lifecycle-engine.py`
 
 **Checkpoint**: User Story 3 is complete. Living artifacts guide users on next steps, track real-time implementation progress, and flag out-of-band edits non-destructively.
 
@@ -94,13 +94,13 @@
 **Independent Test**: Run `/speckit-lifecycle-status` and `/speckit-lifecycle-overview` and confirm accurate output to stdout and `.specify/lifecycle-overview.md`.
 
 ### Tests for User Story 4
-- [ ] T022 [P] [US4] Create integration test for status query and overview compilation in `tests/integration/test_status_overview.sh`
+- [x] T022 [P] [US4] Create integration test for status query and overview compilation in `tests/integration/test_status_overview.sh`
 
 ### Implementation for User Story 4
-- [ ] T023 [US4] Implement workspace overview compiler generating lean active summary in `.specify/lifecycle-overview.md` in `scripts/lifecycle-engine.py`
-- [ ] T024 [P] [US4] Create markdown command definition for `/speckit-lifecycle-status` in `commands/speckit.lifecycle.status.md`
-- [ ] T025 [P] [US4] Create markdown command definition for `/speckit-lifecycle-overview` in `commands/speckit.lifecycle.overview.md`
-- [ ] T026 [US4] Register lifecycle status and overview commands in `extension.yml`
+- [x] T023 [US4] Implement workspace overview compiler generating lean active summary in `.specify/lifecycle-overview.md` in `scripts/lifecycle-engine.py`
+- [x] T024 [P] [US4] Create markdown command definition for `/speckit-lifecycle-status` in `commands/speckit.lifecycle.status.md`
+- [x] T025 [P] [US4] Create markdown command definition for `/speckit-lifecycle-overview` in `commands/speckit.lifecycle.overview.md`
+- [x] T026 [US4] Register lifecycle status and overview commands in `extension.yml`
 
 **Checkpoint**: User Story 4 is complete. Developers and agents can inspect individual status or repository-wide dashboards on demand.
 
@@ -113,12 +113,12 @@
 **Independent Test**: Execute `/speckit-implement` directly after `/speckit-specify` and verify that `lifecycle.md` accepts the transition, records an Observed Deviation explanation, and suggests pragmatic next actions.
 
 ### Tests for User Story 5
-- [ ] T027 [P] [US5] Create integration test for out-of-order execution and deviation explanation in `tests/integration/test_deviation_explainer.sh`
+- [x] T027 [P] [US5] Create integration test for out-of-order execution and deviation explanation in `tests/integration/test_deviation_explainer.sh`
 
 ### Implementation for User Story 5
-- [ ] T028 [US5] Implement open-world dynamic phase registry (accepting any unknown command without validation errors) in `scripts/lifecycle-engine.py`
-- [ ] T029 [US5] Implement Deviation Explainer engine generating plain-language explanations of bypassed stages in `scripts/lifecycle-engine.py`
-- [ ] T030 [US5] Add fail-closed diagnostic logging to stderr on filesystem write errors in `scripts/hook-pre-command.sh` and `scripts/hook-post-command.sh`
+- [x] T028 [US5] Implement open-world dynamic phase registry (accepting any unknown command without validation errors) in `scripts/lifecycle-engine.py`
+- [x] T029 [US5] Implement Deviation Explainer engine generating plain-language explanations of bypassed stages in `scripts/lifecycle-engine.py`
+- [x] T030 [US5] Add fail-closed diagnostic logging to stderr on filesystem write errors in `scripts/hook-pre-command.sh` and `scripts/hook-post-command.sh`
 
 **Checkpoint**: User Story 5 is complete. The system acts strictly as a resilient, informative State Keeper across standard, non-standard, and future Spec Kit workflows.
 
@@ -131,13 +131,13 @@
 **Independent Test**: Run `specify extension add lifecycle --dev .` and verify clean validation with exit code 0; verify generated catalog submission descriptor.
 
 ### Tests for User Story 6
-- [ ] T031 [P] [US6] Create integration test for `--dev` installation and archive packaging in `tests/integration/test_dev_install.sh`
+- [x] T031 [P] [US6] Create integration test for `--dev` installation and archive packaging in `tests/integration/test_dev_install.sh`
 
 ### Implementation for User Story 6
-- [ ] T032 [US6] Finalize root `extension.yml` manifest with complete command, hook, and template declarations conforming to Schema 1.0
-- [ ] T033 [P] [US6] Create comprehensive extension documentation in `README.md`
-- [ ] T034 [P] [US6] Create `LICENSE` (MIT) and release notes in `CHANGELOG.md`
-- [ ] T035 [US6] Generate community catalog submission descriptor in `catalog-submission.json` conforming to the `extensions/catalog.community.json` schema
+- [x] T032 [US6] Finalize root `extension.yml` manifest with complete command, hook, and template declarations conforming to Schema 1.0
+- [x] T033 [P] [US6] Create comprehensive extension documentation in `README.md`
+- [x] T034 [P] [US6] Create `LICENSE` (MIT) and release notes in `CHANGELOG.md`
+- [x] T035 [US6] Generate community catalog submission descriptor in `catalog-submission.json` conforming to the `extensions/catalog.community.json` schema
 
 **Checkpoint**: User Story 6 is complete. Extension is packaged, installable, and ready for global distribution.
 
@@ -147,9 +147,9 @@
 
 **Purpose**: End-to-end regression validation, execution permissions, and documentation validation.
 
-- [ ] T036 [P] Create full regression test suite orchestrator in `tests/run_all_tests.sh`
-- [ ] T037 Validate end-to-end quickstart workflow against `specs/001-sdlc-lifecycle-tracker/quickstart.md`
-- [ ] T038 [P] Configure executable permissions (`chmod +x`) on all shell scripts in `scripts/` and `tests/`
+- [x] T036 [P] Create full regression test suite orchestrator in `tests/run_all_tests.sh`
+- [x] T037 Validate end-to-end quickstart workflow against `specs/001-sdlc-lifecycle-tracker/quickstart.md`
+- [x] T038 [P] Configure executable permissions (`chmod +x`) on all shell scripts in `scripts/` and `tests/`
 
 ---
 
@@ -214,3 +214,13 @@ graph TD
 4. Add US4 $\rightarrow$ Global workspace overview and CLI commands available.
 5. Add US5 $\rightarrow$ Deviation explainer and upgrade extensibility active.
 6. Add US6 $\rightarrow$ Standalone Spec Kit extension packaging and community catalog submission ready.
+
+---
+
+## Phase 10: Convergence
+
+- [x] T039 Implement artifact scanning state reconciliation to reconstruct lifecycle.md and active phase from existing folder artifacts per FR-015, SC-007 (missing)
+- [x] T040 Implement interruption detection and status reconciliation during status queries in get_status() per FR-005, US2/AC3 (partial)
+- [x] T041 Add bug escalation phase mapping and next action handoff to feature specification in lifecycle-engine.py per FR-007, Edge Cases (partial)
+- [x] T042 Add automated contract and integration tests for state reconciliation and status query interruption detection in tests/ per Constitution III, SC-007 (missing)
+- [x] T043 Initialize and reconcile living lifecycle.md for specs/001-sdlc-lifecycle-tracker per FR-001, SC-001 (missing)

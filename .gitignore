@@ -7,3 +7,13 @@ Thumbs.db
 .vscode/
 *.swp
 *~
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+dist/
+*.egg-info/

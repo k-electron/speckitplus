@@ -1,0 +1,31 @@
+# SDLC Lifecycle State Tracker Configuration
+# Copy this file to .specify/lifecycle.config.yml to customize extension behavior.
+
+passive_sensing:
+  enabled: true
+  # Grace period in seconds to prevent false drift flags from rapid multi-file saves or OS timestamp granularity.
+  drift_threshold_seconds: 60
+  monitored_artifacts:
+    - spec.md
+    - plan.md
+    - tasks.md
+    - research.md
+    - data-model.md
+    - quickstart.md
+
+overview:
+  # Path relative to repository root; placed in .specify/ to avoid polluting top-level repository tree.
+  path: ".specify/lifecycle-overview.md"
+  auto_refresh: true
+  include_completed: false
+
+interruption_detection:
+  # Scans for unclosed IN_PROGRESS events across runs to surface crashed agent sessions.
+  enabled: true
+
+next_action:
+  auto_suggest: true
+
+format:
+  # Mermaid diagrams require markdown viewers with diagram support (e.g. GitHub, VS Code Markdown Preview).
+  render_mermaid: true
