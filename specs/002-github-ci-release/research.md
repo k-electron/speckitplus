@@ -21,7 +21,7 @@
 - **Alternatives Considered**: `softprops/action-gh-release` or similar marketplace actions. Rejected to preserve 100% native tooling without external action lock-in or token delegation risks.
 
 ### Decision 3: Cross-Platform Test Matrix
-- **Decision**: Run CI against both `ubuntu-latest` and `macos-latest` across Python versions 3.10, 3.11, 3.12, and 3.13 via `actions/setup-python@v5`.
+- **Decision**: Run CI against both `ubuntu-latest` and `macos-latest` across Python versions 3.10, 3.11, 3.12, and 3.13 via `actions/setup-python@v7`.
 - **Rationale**: SpecKitPlus uses POSIX bash scripts and standard library Python. macOS (Darwin, bash 3.2+) and Linux (Ubuntu, bash 5+) have subtle differences in shell utilities (e.g. `mktemp`, `sed`, `date`, `stat`). Testing on both operating systems guarantees cross-platform reliability.
 - **Alternatives Considered**: Linux-only testing with Docker. Rejected because macOS is the primary local development environment for many Spec Kit users and AI coding assistants.
 

@@ -23,8 +23,8 @@
 ### Job 1: `verify-release` (Gating job)
 - **Runner**: `ubuntu-latest`
 - **Steps**:
-  1. `actions/checkout@v4`
-  2. `actions/setup-python@v5` (Python 3.11)
+  1. `actions/checkout@v7`
+  2. `actions/setup-python@v7` (Python 3.11)
   3. Validate version consistency:
      - Extract version from tag (e.g. `v1.0.0` -> `1.0.0`) or input.
      - Verify `extension.yml` declares exact matching version.
@@ -35,15 +35,16 @@
 - **Runner**: `ubuntu-latest`
 - **Depends on**: `verify-release` (execution blocked if verification fails)
 - **Steps**:
-  1. `actions/checkout@v4`
-  2. Package clean `.zip` archive:
+  1. `actions/checkout@v7`
+  2. `actions/setup-python@v7` (Python 3.11)
+  3. Package clean `.zip` archive:
      - File 1: `lifecycle-<version>.zip`
      - File 2: `lifecycle.zip`
-  3. Generate cryptographic SHA256 checksums:
+  4. Generate cryptographic SHA256 checksums:
      - `sha256sum lifecycle-<version>.zip > lifecycle-<version>.zip.sha256`
      - `sha256sum lifecycle.zip > lifecycle.zip.sha256`
-  4. Extract release notes from `CHANGELOG.md` matching target version.
-  5. If `dry_run == false`:
+  5. Extract release notes from `CHANGELOG.md` matching target version.
+  6. If `dry_run == false`:
      - Run `gh release create v<version> lifecycle-<version>.zip lifecycle.zip *.sha256 --title "v<version>" --notes-file release-notes.md` (with `--draft` if requested).
-  6. Generate job summary:
+  7. Generate job summary:
      - Output release status, asset URLs, SHA256 hashes, and copy-paste community catalog PR instructions to `$GITHUB_STEP_SUMMARY`.

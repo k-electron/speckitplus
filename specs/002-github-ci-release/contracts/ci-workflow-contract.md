@@ -23,8 +23,8 @@
   - `python-version`: `['3.10', '3.11', '3.12', '3.13']`
   - `fail-fast`: `false`
 - **Steps**:
-  1. `actions/checkout@v4`
-  2. `actions/setup-python@v5` with matrix `python-version`
+  1. `actions/checkout@v7`
+  2. `actions/setup-python@v7` with matrix `python-version`
   3. **Ensure Spec Kit CLI available**:
      - Prerequisites setup: install `specify-cli` via `pipx` or `python3 -m pip` if not already installed (required for integration tests)
   4. **Static Syntax Check**:

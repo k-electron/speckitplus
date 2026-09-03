@@ -30,11 +30,12 @@ jobs:
     name: verify-release
     runs-on: ubuntu-latest
     steps:
+      # Node 24 action runtime migration
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.11'
 
@@ -74,11 +75,12 @@ jobs:
     needs: [verify-release]
     runs-on: ubuntu-latest
     steps:
+      # Node 24 action runtime migration
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.11'
 

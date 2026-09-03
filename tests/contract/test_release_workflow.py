@@ -26,8 +26,8 @@ except ImportError:
 
 RELEASE_WORKFLOW_PATH = REPO_ROOT / ".github" / "workflows" / "release.yml"
 PERMITTED_ACTIONS = {
-    "actions/checkout@v4",
-    "actions/setup-python@v5",
+    "actions/checkout@v7",
+    "actions/setup-python@v7",
 }
 REQUIRED_DISPATCH_INPUTS = {"version", "dry_run", "draft"}
 EXPECTED_TAG_PATTERN = "v*.*.*"
@@ -109,8 +109,8 @@ def validate_release_workflow_contract(doc: dict[str, Any]) -> None:
     combined_verify_runs = "\n".join(verify_runs)
 
     # Deterministic runtime: Python 3.11 required for contract validation
-    setup_py = next((s for s in verify_steps if s.get("uses") == "actions/setup-python@v5"), None)
-    assert setup_py is not None, "Job 'verify-release' must configure actions/setup-python@v5"
+    setup_py = next((s for s in verify_steps if s.get("uses") == "actions/setup-python@v7"), None)
+    assert setup_py is not None, "Job 'verify-release' must configure actions/setup-python@v7"
     py_ver = setup_py.get("with", {}).get("python-version")
     assert str(py_ver) == "3.11", f"Job 'verify-release' Python version must be '3.11', got {py_ver!r}"
 
@@ -236,8 +236,8 @@ class TestReleaseWorkflowContract(unittest.TestCase):
         self.assertTrue(len(steps) > 0, "verify-release must contain steps")
 
         # Runtime environment verification
-        setup_step = next((s for s in steps if s.get("uses") == "actions/setup-python@v5"), None)
-        self.assertIsNotNone(setup_step, "verify-release must configure actions/setup-python@v5")
+        setup_step = next((s for s in steps if s.get("uses") == "actions/setup-python@v7"), None)
+        self.assertIsNotNone(setup_step, "verify-release must configure actions/setup-python@v7")
         self.assertEqual(str(setup_step.get("with", {}).get("python-version")), "3.11")
 
         combined_scripts = "\n".join(s.get("run", "") for s in steps if "run" in s)
@@ -291,6 +291,17 @@ class TestReleaseWorkflowContract(unittest.TestCase):
                         PERMITTED_ACTIONS,
                         f"Job '{job_name}' step {idx} invokes unapproved action '{action}'",
                     )
+
+    def test_checkout_action_version(self) -> None:
+        """Verify actions/checkout uses the required v7 runtime version in all jobs."""
+        jobs = self.workflow_doc.get("jobs", {})
+        for job_name in ("verify-release", "publish-release"):
+            steps = jobs.get(job_name, {}).get("steps", [])
+            checkout_step = next((s for s in steps if s.get("uses") == "actions/checkout@v7"), None)
+            self.assertIsNotNone(
+                checkout_step,
+                f"Job '{job_name}' must configure actions/checkout@v7 step",
+            )
 
     def test_fail_closed_no_continue_on_error(self) -> None:
         """Verify no workflow step specifies continue-on-error: true, guaranteeing immediate halt on failure."""
@@ -427,6 +438,25 @@ class TestReleaseWorkflowContract(unittest.TestCase):
                 with self.assertRaises(AssertionError) as ctx:
                     validate_release_workflow_contract(mutated)
                 self.assertIn("invokes unapproved action 'evil-corp/unvetted-action@v1'", str(ctx.exception))
+
+    def test_mutation_rejects_outdated_action_versions(self) -> None:
+        """Verify that outdated action versions (e.g. checkout@v4, setup-python@v5) are rejected."""
+        outdated_actions = [
+            "actions/checkout@v4",
+            "actions/checkout@v5",
+            "actions/checkout@v6",
+            "actions/setup-python@v4",
+            "actions/setup-python@v5",
+            "actions/setup-python@v6",
+        ]
+        for target_job in ("verify-release", "publish-release"):
+            for outdated in outdated_actions:
+                with self.subTest(target_job=target_job, outdated=outdated):
+                    mutated = copy.deepcopy(self.workflow_doc)
+                    mutated["jobs"][target_job]["steps"][0]["uses"] = outdated
+                    with self.assertRaises(AssertionError) as ctx:
+                        validate_release_workflow_contract(mutated)
+                    self.assertIn("invokes unapproved action", str(ctx.exception))
 
     def test_mutation_rejects_omitted_regression_runner(self) -> None:
         """Verify that removing the regression runner from verify-release fails contract validation."""

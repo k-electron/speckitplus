@@ -26,8 +26,8 @@ except ImportError:
 
 CI_WORKFLOW_PATH = REPO_ROOT / ".github" / "workflows" / "ci.yml"
 PERMITTED_ACTIONS = {
-    "actions/checkout@v4",
-    "actions/setup-python@v5",
+    "actions/checkout@v7",
+    "actions/setup-python@v7",
 }
 EXPECTED_CHECK_NAME = "quality-gates (${{ matrix.os }}, ${{ matrix.python-version }})"
 REQUIRED_OS_MATRIX = {"ubuntu-latest", "macos-latest"}
@@ -244,11 +244,17 @@ class TestCIWorkflowContract(unittest.TestCase):
                 f"Action '{action}' is not permitted under CI security guardrails",
             )
 
+    def test_checkout_action_version(self) -> None:
+        """Verify actions/checkout uses the required v7 runtime version."""
+        steps = self.workflow_doc.get("jobs", {}).get("quality-gates", {}).get("steps", [])
+        checkout_step = next((s for s in steps if s.get("uses") == "actions/checkout@v7"), None)
+        self.assertIsNotNone(checkout_step, "Workflow must configure actions/checkout@v7 step")
+
     def test_setup_python_binds_matrix_runtime(self) -> None:
         """Verify actions/setup-python binds python-version to the matrix context variable."""
         steps = self.workflow_doc.get("jobs", {}).get("quality-gates", {}).get("steps", [])
-        setup_step = next((s for s in steps if s.get("uses") == "actions/setup-python@v5"), None)
-        self.assertIsNotNone(setup_step, "Workflow must contain actions/setup-python@v5 step")
+        setup_step = next((s for s in steps if s.get("uses") == "actions/setup-python@v7"), None)
+        self.assertIsNotNone(setup_step, "Workflow must contain actions/setup-python@v7 step")
 
         py_version_binding = setup_step.get("with", {}).get("python-version")
         self.assertEqual(
@@ -357,6 +363,24 @@ class TestCIWorkflowContract(unittest.TestCase):
         with self.assertRaises(AssertionError) as ctx:
             validate_ci_workflow_contract(mutated)
         self.assertIn("invokes unapproved third-party action", str(ctx.exception))
+
+    def test_mutation_rejects_outdated_action_versions(self) -> None:
+        """Verify that outdated action versions (e.g. checkout@v4, setup-python@v5) are rejected."""
+        outdated_actions = [
+            "actions/checkout@v4",
+            "actions/checkout@v5",
+            "actions/checkout@v6",
+            "actions/setup-python@v4",
+            "actions/setup-python@v5",
+            "actions/setup-python@v6",
+        ]
+        for outdated in outdated_actions:
+            with self.subTest(outdated=outdated):
+                mutated = copy.deepcopy(self.workflow_doc)
+                mutated["jobs"]["quality-gates"]["steps"][0]["uses"] = outdated
+                with self.assertRaises(AssertionError) as ctx:
+                    validate_ci_workflow_contract(mutated)
+                self.assertIn("invokes unapproved third-party action", str(ctx.exception))
 
     def test_mutation_rejects_fail_fast_enabled(self) -> None:
         """Verify that setting fail-fast: true violates diagnostic completeness contract."""
