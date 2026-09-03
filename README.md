@@ -52,36 +52,159 @@ graph TD
 
 ---
 
-## Quickstart
+## Installation & Verification
 
-### Installation
+### Prerequisites
+- [Spec Kit](https://github.com/github/spec-kit) CLI (`specify`) installed and initialized in your repository (`specify init`).
+- Python 3.10+ (standard library only; no pip packages or virtual environments needed).
+
+### Step 1: Install the Extension
+
+Choose the method that matches your setup:
 
 ```bash
-# In your target project (from community catalog):
+# Method A: From the Spec Kit community catalog (recommended once published)
 specify extension add lifecycle
 
-# Or from local source during development:
+# Method B: Direct from GitHub release archive
+specify extension add lifecycle --from https://github.com/k-electron/speckitplus/archive/refs/tags/v1.0.0.zip
+
+# Method C: From a local clone or development branch
 specify extension add /path/to/speckitplus --dev
 ```
 
-### Day-to-Day Workflow
+### Step 2: Verify Installation
 
-Once installed, tracking is automatic. You can inspect status anytime:
+Confirm that the extension and its commands are registered:
 
 ```bash
-# Check current feature status & next recommended action:
-/speckit-lifecycle-status
+specify extension list
+```
 
-# View repository-wide SDLC dashboard:
+You should see:
+```text
+✓ SDLC Lifecycle State Tracker (v1.0.0)
+   lifecycle
+   Living SDLC state artifact tracker and workspace overview
+   Commands: 2 | Hooks: Active | Status: Enabled
+```
+
+---
+
+## Step-by-Step Usage Walkthrough
+
+Once installed, **you don't need to change how you work**. SpecKitPlus runs silently in the background via Spec Kit hooks.
+
+### 1. Start a Feature as Usual
+
+Invoke the standard Spec Kit command in your agent or terminal:
+
+```bash
+/speckit-specify "Build modern user notifications"
+```
+
+**What happens automatically**:
+- The pre-hook intercepts the command and records an `IN_PROGRESS` transition.
+- Upon completion, `specs/002-build-user-notifications/lifecycle.md` is born with phase `SPECIFIED` and exact execution timestamps.
+
+### 2. Check "What Do I Run Next?"
+
+Any developer or AI agent can query the current item's health and next milestone:
+
+```bash
+/speckit-lifecycle-status
+```
+
+Output:
+```text
+SDLC Status:   Build Modern User Notifications (002-build-user-notifications)
+Track:         Feature
+Current Phase: SPECIFIED
+Status:        ACTIVE
+Next Action:   /speckit-plan (Create architecture and implementation plan)
+Progress:      0% (0/0 tasks)
+Last Updated:  2026-09-02T10:05:00Z
+```
+
+### 3. Move Through the SDLC
+
+Follow the recommended actions:
+1. Run `/speckit-plan` &rarr; `lifecycle.md` updates to `PLANNED`; next action becomes `/speckit-tasks`.
+2. Run `/speckit-tasks` &rarr; `lifecycle.md` updates to `TASKED`; next action becomes `/speckit-implement`.
+3. Run `/speckit-implement` &rarr; `lifecycle.md` tracks real-time progress:
+
+```text
+SDLC Status:   Build Modern User Notifications (002-build-user-notifications)
+Current Phase: IMPLEMENTING
+Status:        ACTIVE
+Next Action:   /speckit-implement (Continue implementation tasks (60% complete))
+Progress:      60% (6/10 tasks)
+```
+
+As tasks in `tasks.md` are marked `[x]`, progress updates dynamically on every invocation.
+
+### 4. View the Team Dashboard
+
+Compile or view repository-wide progress across all features, bugs, and idea assessments:
+
+```bash
 /speckit-lifecycle-overview
 ```
 
-Or invoke the engine CLI directly:
+This compiles a clean markdown dashboard saved to [`.specify/lifecycle-overview.md`](config-template.yml):
+
+```markdown
+# Repository SDLC Overview
+
+| Track | Active Items | Completed Items |
+|---|---|---|
+| **Features** | 2 | 5 |
+| **Bugs** | 1 | 3 |
+| **Assessments** | 0 | 2 |
+
+## Active Work
+
+| Slug | Track | Current Phase | Progress | Next Recommended Action | Last Updated |
+|---|---|---|---|---|---|
+| 002-build-user-notifications | Feature | IMPLEMENTING | 60% (6/10) | `/speckit-implement` | 2026-09-02 10:45 |
+| bug-041-token-expiry | Bug | ASSESSED | 0% (0/0) | `/speckit-bug-fix` | 2026-09-02 09:30 |
+```
+
+---
+
+## Real-World Scenarios & Edge Cases
+
+### Resuming an Interrupted or Crashed Agent Run
+If an AI coding agent session crashes, terminal times out, or process halts mid-execution:
+- Run `/speckit-lifecycle-status`.
+- The State Keeper detects the unclosed `IN_PROGRESS` event, flags `Status: INTERRUPTED`, logs how long the session ran before aborting, and gives you the exact command to resume without losing already-completed tasks.
+
+### Non-Destructive Soft Drift (Editing Specs Out-of-Band)
+If you refine `spec.md` or `plan.md` in your IDE or conversational chat *after* tasks are generated:
+- SpecKitPlus senses the filesystem timestamp difference on the next run.
+- It marks the milestone as `PLANNED (revised)`, increments `revision_count: 2`, and raises a non-blocking `Drift Notice`.
+- **Downstream work is never deleted**—your existing `tasks.md` and code remain intact.
+
+### Adopting in Existing Projects (State Reconciliation)
+If you install SpecKitPlus in a project with pre-existing features that lack a `lifecycle.md`:
+- Running `/speckit-lifecycle-status` or `./scripts/lifecycle-engine.py reconcile` inspects the directory's existing files (`spec.md`, `plan.md`, `tasks.md`, `checklists/`).
+- It automatically determines the active phase (100% accuracy) and reconstructs a valid `lifecycle.md` with milestone history.
+
+---
+
+## CLI & Direct Engine Usage
+
+The Python engine can also be executed directly in CI pipelines or terminal scripts without Spec Kit slash commands:
 
 ```bash
-./scripts/lifecycle-engine.py status [--json] [--dir <path>]
+# Query active status (or target a specific directory):
+./scripts/lifecycle-engine.py status [--dir specs/001-feature] [--json]
+
+# Compile repository overview (or emit JSON for dashboards):
 ./scripts/lifecycle-engine.py overview [--all] [--json]
-./scripts/lifecycle-engine.py reconcile [dir]
+
+# Reconstruct / reconcile a missing lifecycle.md:
+./scripts/lifecycle-engine.py reconcile specs/001-feature [--json]
 ```
 
 ---
