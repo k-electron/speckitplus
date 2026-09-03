@@ -1,226 +1,187 @@
-# Spec Kit SDLC Lifecycle State Tracker
+# SpecKitPlus: SDLC Lifecycle State Tracker
 
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Dependencies](https://img.shields.io/badge/dependencies-Zero%20(Python%203%20stdlib)-success.svg)](scripts/lifecycle-engine.py)
 [![Spec Kit Compatibility](https://img.shields.io/badge/speckit-%3E%3D0.1.0-brightgreen.svg)](extension.yml)
 
-> **Living SDLC state artifact tracker and workspace overview for Spec Kit features, bugs, and idea assessments.**
+> **A zero-dependency Spec Kit extension that turns every specification, bug, and product assessment into a self-documenting, living state artifact.**
 
-The **SDLC Lifecycle State Tracker** is a zero-dependency extension for [Spec Kit](https://github.com/github/spec-kit). It bridges AI coding agent sessions, manual editor workflows, and human engineering supervision by maintaining an accurate, non-destructive, living state artifact (`lifecycle.md`) in each specification directory alongside a global repository dashboard (`.specify/lifecycle-overview.md`).
+Spec Kit organizes software delivery into rigorous markdown artifacts (`spec.md`, `plan.md`, `tasks.md`). But knowing where an item stands, how long milestones took, whether a mid-flight agent crashed, or what command to run next often requires manual inspection.
+
+**SpecKitPlus** acts as a non-intrusive **State Keeper**: it records execution history, passively senses manual edits, detects interruptions, and highlights the next recommended step—all persisted directly into the repository filesystem.
 
 ---
 
-## High-Level Architecture Overview
+## The Philosophy: State Keeper, Never an Enforcer
 
-The tracker employs a **Dual-Engine Architecture** to guarantee total visibility without human friction:
+Traditional workflow tools block developers when steps happen out of order. SpecKitPlus never halts execution or rejects non-standard paths. Instead, it observes reality:
+- **Descriptive, not prescriptive**: If you skip clarification or jump straight to implementation, it records what actually happened and generates an *Observed Deviation* explanation.
+- **Non-destructive layering**: Editing an upstream specification increments revision counts and raises a *Soft Drift Advisory* without wiping out downstream tasks.
+- **Filesystem encapsulation**: State lives inside each item's directory (`lifecycle.md`), keeping the root clean and the global overview (`.specify/lifecycle-overview.md`) bloat-free.
 
-1. **Active Engine (Pre/Post Command Hooks)**:
-   - Intercepts Spec Kit command invocations (`specify`, `clarify`, `checklist`, `plan`, `tasks`, `taskstoissues`, `analyze`, `implement`, `converge`, plus bug triage and idea assessment pipelines).
-   - Records phase transitions, execution start/end timestamps, exit codes, and durations.
-   - Detects mid-command crashes, terminal disconnections, and interrupted agent sessions.
+---
 
-2. **Passive Engine (Artifact Sensing)**:
-   - Non-destructively scans filesystem timestamps, file sizes, and sha256 checksums across monitored artifacts (`spec.md`, `plan.md`, `tasks.md`, etc.).
-   - Detects conversational or out-of-band edits performed by developers or coding agents in an IDE without slash commands.
-   - Parses task checklist progress in real time directly from `tasks.md`.
+## Architecture: Dual-Engine Design
 
 ```mermaid
 graph TD
-    subgraph ActiveEngine["Active Engine (Spec Kit Hooks)"]
-        PreHook["Pre-Command Hook<br/>(hook-pre-command.sh)"] --> MarkActive["Mark Run IN_PROGRESS<br/>Detect Prior Interruptions"]
-        Command["Slash Command Execution<br/>(/speckit-specify, /speckit-plan, ...)"] --> PostHook["Post-Command Hook<br/>(hook-post-command.sh)"]
-        PostHook --> TransitionState["Record Milestone & Exit Code"]
+    subgraph Active["Active Engine (Spec Kit Hooks)"]
+        Pre["Pre-Command Hook"] --> Start["Record IN_PROGRESS & Started Timestamp"]
+        Post["Post-Command Hook"] --> Complete["Record COMPLETED, Duration & Exit Code"]
     end
 
-    subgraph PassiveEngine["Passive Engine (Artifact Sensing)"]
-        FileMod["Manual / Conversational Edits<br/>(spec.md, plan.md, tasks.md)"] --> StatCheck["Stat & Hash Drift Scanner"]
-        StatCheck --> SoftDrift["Soft-Drift Detection & Checkbox Progress"]
+    subgraph Passive["Passive Engine (Artifact Sensing)"]
+        FileMod["Manual / Conversational Edits"] --> Sense["Timestamp & Hash Scanner"]
+        Tasks["tasks.md Checkboxes"] --> Prog["Real-Time Completion %"]
     end
 
-    subgraph CoreEngine["Lifecycle Engine (lifecycle-engine.py)"]
-        MarkActive --> CoreEngine
-        TransitionState --> CoreEngine
-        SoftDrift --> CoreEngine
-        CoreEngine --> LivingArtifact["Living State Artifact<br/>(specs/###-*/lifecycle.md)"]
-        CoreEngine --> OverviewDoc["Global Dashboard<br/>(.specify/lifecycle-overview.md)"]
+    subgraph Core["Lifecycle Engine (Python 3 stdlib)"]
+        Start --> Core
+        Complete --> Core
+        Sense --> Core
+        Prog --> Core
+        Core --> LivingDoc["Living Artifact (specs/<slug>/lifecycle.md)"]
+        Core --> Overview["Repository Dashboard (.specify/lifecycle-overview.md)"]
     end
 ```
+
+1. **Active Engine**: Intercepts Spec Kit commands (`specify`, `plan`, `tasks`, `implement`, `converge`, plus bug and assessment tracks) to log start/end timestamps, elapsed durations, and exit codes.
+2. **Passive Engine**: Inspects filesystem mtimes to detect conversational edits in chat or IDEs without slash commands, and calculates live `- [x]` completion ratios from `tasks.md`.
+3. **State Reconciliation**: If a `lifecycle.md` is deleted or pre-dates extension installation, scanning existing artifacts (`spec.md`, `plan.md`, `tasks.md`, `checklists/`) automatically reconstructs the full milestone timeline.
 
 ---
 
-## Key Features
+## Quickstart
 
-- **Living `lifecycle.md` State Artifacts**:
-  Co-located with specifications (`specs/###-<feature>/lifecycle.md`, `.specify/bugs/<slug>/lifecycle.md`, `.specify/assessments/<slug>/lifecycle.md`). Contains strict YAML frontmatter, execution timelines, next action recommendations, and embedded Mermaid state machine diagrams.
-- **Multi-Track Support**:
-  - **Feature Track**: Standard Spec-Driven Lifecycle (`SPECIFIED` &rarr; `CLARIFIED` &rarr; `CHECKLISTED` &rarr; `PLANNED` &rarr; `TASKED` &rarr; `ANALYZED` &rarr; `IMPLEMENTING` &rarr; `CONVERGED`).
-  - **Bug Triage Track**: Dedicated issue triage flow (`ASSESSED` &rarr; `FIXING` &rarr; `TESTED`).
-  - **Idea Assessment Track**: Early-stage discovery pipeline (`INTAKE` &rarr; `RESEARCHING` &rarr; `DEFINING` &rarr; `SHAPING` &rarr; `DECIDED`).
-  - **Custom Open Track**: Flexible extension supporting project-specific phases and milestone progressions.
-- **Crash & Interruption Detection**:
-  Pre-hooks log invocations as `IN_PROGRESS`. If an agent or session halts unexpectedly, subsequent command runs or status checks flag the interruption, report the halting phase, and advise how to cleanly resume.
-- **Task Checkbox Progress Tracking**:
-  Parses `- [ ]` and `- [x]` items in `tasks.md`. Computes completed task counts and percentages on every invocation to keep sub-status and metrics synchronized.
-- **Soft Drift Advisory**:
-  Non-destructive drift detection. When upstream specifications or plans are modified after downstream artifacts exist, soft drift warnings are generated without wiping out subsequent work.
-- **State Keeper & Deviation Explainer**:
-  Validates command sequences against the track state machine. When commands execute out of order (e.g., implementing before planning), clear, non-blocking explanations and guidance are surfaced.
-- **Workspace Overview Dashboard (`.specify/lifecycle-overview.md`)**:
-  Aggregates repository-wide lifecycle metrics, active items, current phases, task completion rates, and next recommended actions in a clean markdown table.
+### Installation
 
----
-
-## Installation
-
-### Method A: Local Development Install
-In your target project workspace (referencing this extension directory):
 ```bash
-specify extension add /path/to/speckitplus --dev
-# Or from the extension repository:
-specify extension add . --dev
-```
-
-### Method B: Install from Release Archive
-In any Spec Kit-enabled project:
-```bash
-specify extension add lifecycle --from https://github.com/k-electron/speckitplus/archive/refs/tags/v1.0.0.zip
-```
-
-### Method C: Official Community Catalog (Once Published)
-```bash
+# In your target project (from community catalog):
 specify extension add lifecycle
+
+# Or from local source during development:
+specify extension add /path/to/speckitplus --dev
 ```
 
-To verify installation:
-```bash
-specify extension list
-```
+### Day-to-Day Workflow
 
----
-
-## Command Reference
-
-The extension exposes two Spec Kit slash commands:
-
-### `/speckit-lifecycle-status`
-Display SDLC phase, health status, task completion progress, soft drift notices, and the recommended next action for the active feature, bug, or assessment.
+Once installed, tracking is automatic. You can inspect status anytime:
 
 ```bash
-# Query active feature in current directory or branch context:
+# Check current feature status & next recommended action:
 /speckit-lifecycle-status
 
-# Or invoke directly via script:
-./scripts/lifecycle-engine.py status
-
-# Optional arguments:
-./scripts/lifecycle-engine.py status --dir specs/001-sdlc-lifecycle-tracker
-./scripts/lifecycle-engine.py status --json
+# View repository-wide SDLC dashboard:
+/speckit-lifecycle-overview
 ```
 
-**Output Fields**:
-- `Track`: Active track (`feature`, `bug`, `assessment`, `custom`)
-- `Current Phase`: Active milestone (e.g. `PLANNED`, `TASKED`, `IMPLEMENTING`)
-- `Sub-Status`: `active`, `revised`, `interrupted`, `converged`, or `aborted`
-- `Task Progress`: Completed tasks, total tasks, and percentage
-- `Next Recommended Action`: Next command and contextual rationale
-- `Drift Notice`: Upstream divergence warnings (if detected)
-
-### `/speckit-lifecycle-overview`
-Compile and display the repository-wide SDLC lifecycle status dashboard across all active and completed items.
+Or invoke the engine CLI directly:
 
 ```bash
-# Generate and display overview:
-/speckit-lifecycle-overview
-
-# Or invoke directly via script:
-./scripts/lifecycle-engine.py overview
-
-# Optional arguments:
-./scripts/lifecycle-engine.py overview --all           # Include completed items
-./scripts/lifecycle-engine.py overview --output <path> # Custom output markdown path
-./scripts/lifecycle-engine.py overview --json          # Structured JSON payload
+./scripts/lifecycle-engine.py status [--json] [--dir <path>]
+./scripts/lifecycle-engine.py overview [--all] [--json]
+./scripts/lifecycle-engine.py reconcile [dir]
 ```
 
-Dashboard is saved by default to [`.specify/lifecycle-overview.md`](config-template.yml).
+---
+
+## Anatomy of `lifecycle.md`
+
+Each managed item receives a hybrid `lifecycle.md` document combining machine-actionable YAML frontmatter with human-readable GitHub Flavored Markdown:
+
+```markdown
+---
+track: feature
+slug: 001-user-auth
+title: User Authentication
+current_phase: IMPLEMENTING
+sub_status: active
+revision_count: 1
+next_action:
+  command: /speckit-implement
+  description: Continue implementation tasks (60% complete)
+progress:
+  tasks_total: 10
+  tasks_completed: 6
+  percent: 60
+drift_advisory: null
+deviation_explanation: null
+created_at: "2026-09-02T10:00:00Z"
+updated_at: "2026-09-02T10:45:00Z"
+transitions:
+  - id: evt-001
+    phase: SPECIFIED
+    command: speckit.specify
+    status: COMPLETED
+    started_at: "2026-09-02T10:00:00Z"
+    completed_at: "2026-09-02T10:02:30Z"
+    duration_seconds: 150
+---
+
+# SDLC Lifecycle: User Authentication
+**Track**: Feature | **Current Phase**: `IMPLEMENTING` | **Status**: `ACTIVE`
+
+> [!TIP]
+> **Next Recommended Action**: `/speckit-implement`  
+> *Continue implementation tasks (60% complete)*
+
+```mermaid
+graph LR
+    S["1. Specify<br/>✓ Done"] --> P["2. Plan<br/>✓ Done"]
+    P --> T["3. Tasks<br/>✓ Done"]
+    T --> I["4. Implement<br/>▶ ACTIVE (60%)"]
+    I -.-> V["5. Converge<br/>Pending"]
+```
+
+## Milestone Timeline
+
+| Phase | Command | Status | Started | Completed | Duration | Notes |
+|---|---|---|---|---|---|---|
+| SPECIFIED | speckit.specify | COMPLETED | 10:00:00 | 10:02:30 | 2m 30s | Initial specification |
+| PLANNED | speckit.plan | COMPLETED | 10:15:00 | 10:20:00 | 5m 00s | Architecture approved |
+| TASKED | speckit.tasks | COMPLETED | 10:25:00 | 10:28:00 | 3m 00s | 10 tasks generated |
+| IMPLEMENTING | speckit.implement | IN_PROGRESS | 10:30:00 | - | - | 6/10 tasks completed |
+```
+
+---
+
+## Key Capabilities
+
+- **Crash & Interruption Recovery**: Pre-hooks log `status: IN_PROGRESS`. If an agent or session halts unexpectedly, the next query flags the event as `INTERRUPTED` and presents clean resumption guidance.
+- **Multi-Track Support**: Native lifecycle taxonomies for **Features** (`SPECIFIED` &rarr; `CONVERGED`), **Bug Triage** (`ASSESSED` &rarr; `VERIFIED` or `ESCALATED_TO_FEATURE`), and **Idea Assessments** (`INTAKE` &rarr; `DECIDED_GO` / `DECIDED_KILL`).
+- **Soft Drift Advisories**: Upstream edits increment revisions and flag drift between artifacts without destroying downstream implementation files.
+- **Task Checkbox Synchronization**: Scans `- [ ]` / `- [x]` items dynamically on every run to keep progress percentages accurate.
+- **Zero Dependencies**: Pure Python 3 standard library (`json`, `pathlib`, `argparse`, `datetime`) and POSIX bash. No virtual environments, pip packages, or npm modules required.
 
 ---
 
 ## Configuration
 
-Customize tracker behavior by creating `.specify/lifecycle.config.yml`. A template is provided in [`config-template.yml`](config-template.yml):
-
-```bash
-cp config-template.yml .specify/lifecycle.config.yml
-```
-
-### Configuration Options
+Optionally configure extension behavior in `.specify/lifecycle.config.yml` (scaffolded from [`config-template.yml`](config-template.yml)):
 
 ```yaml
 passive_sensing:
   enabled: true
-  drift_threshold_seconds: 60
-  monitored_artifacts:
-    - spec.md
-    - plan.md
-    - tasks.md
-    - research.md
-    - data-model.md
-    - quickstart.md
-
+  drift_threshold_seconds: 60  # Grace period to prevent false drift on multi-file saves
 overview:
   path: ".specify/lifecycle-overview.md"
   auto_refresh: true
   include_completed: false
-
 interruption_detection:
   enabled: true
-
-next_action:
-  auto_suggest: true
-
 format:
   render_mermaid: true
 ```
 
-- `passive_sensing.drift_threshold_seconds`: Grace period to suppress false drift flags from rapid multi-file saves or OS timestamp granularity.
-- `overview.path`: Path where the consolidated overview markdown is written.
-- `overview.auto_refresh`: Automatically updates `.specify/lifecycle-overview.md` on hook execution.
-- `interruption_detection.enabled`: Scans unclosed `IN_PROGRESS` runs to flag crashed sessions.
-- `format.render_mermaid`: Renders interactive Mermaid state machine diagrams inside `lifecycle.md`.
-
 ---
 
-## Zero-Dependency Architecture
+## Verification & Testing
 
-- **Runtime**: Pure Python 3 standard library (`sys`, `os`, `json`, `re`, `pathlib`, `hashlib`, `datetime`, `argparse`). No `pip install` or external virtualenvs required.
-- **Shell Scripts**: POSIX-compliant bash scripts ([`hook-pre-command.sh`](scripts/hook-pre-command.sh) and [`hook-post-command.sh`](scripts/hook-post-command.sh)) with robust error trapping and environment normalization.
-- **Portability**: Verified on macOS and Linux systems running Spec Kit.
+The extension includes a complete automated test suite (contract tests, schema validators, and POSIX integration suites):
 
----
-
-## Repository Structure
-
-```text
-.
-├── extension.yml               # Manifest conforming to Extension Manifest Schema 1.0
-├── catalog-submission.json     # Community catalog submission descriptor
-├── config-template.yml         # Default user configuration template
-├── README.md                   # Extension documentation
-├── LICENSE                     # MIT License
-├── CHANGELOG.md                # Release notes and version history
-├── commands/
-│   ├── speckit.lifecycle.status.md   # /speckit-lifecycle-status command descriptor
-│   └── speckit.lifecycle.overview.md # /speckit-lifecycle-overview command descriptor
-├── scripts/
-│   ├── hook-pre-command.sh     # Pre-command lifecycle hook wrapper
-│   ├── hook-post-command.sh    # Post-command lifecycle hook wrapper
-│   └── lifecycle-engine.py     # Core dual-engine state tracker and overview compiler
-├── templates/
-│   └── lifecycle-template.md   # Base template for living lifecycle.md artifacts
-└── tests/
-    ├── contract/               # Schema and manifest conformance tests
-    └── integration/            # Dev install, packaging, and workflow integration tests
+```bash
+./tests/run_all_tests.sh
 ```
 
 ---
