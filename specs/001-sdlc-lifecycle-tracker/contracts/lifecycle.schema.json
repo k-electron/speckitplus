@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LifecycleFrontmatter",
+  "type": "object",
+  "required": [
+    "track",
+    "slug",
+    "title",
+    "current_phase",
+    "sub_status",
+    "revision_count",
+    "next_action",
+    "created_at",
+    "updated_at",
+    "transitions"
+  ],
+  "properties": {
+    "track": {
+      "type": "string",
+      "enum": ["feature", "bug", "assessment", "custom"]
+    },
+    "slug": {
+      "type": "string",
+      "pattern": "^[0-9]{3}-[a-z0-9-]+|[a-z0-9-]+$"
+    },
+    "title": {
+      "type": "string"
+    },
+    "current_phase": {
+      "type": "string"
+    },
+    "sub_status": {
+      "type": "string",
+      "enum": ["active", "revised", "interrupted", "converged", "aborted", "archived"]
+    },
+    "revision_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "next_action": {
+      "type": "object",
+      "required": ["command", "description"],
+      "properties": {
+        "command": { "type": "string" },
+        "description": { "type": "string" }
+      }
+    },
+    "progress": {
+      "type": "object",
+      "properties": {
+        "tasks_total": { "type": "integer", "minimum": 0 },
+        "tasks_completed": { "type": "integer", "minimum": 0 },
+        "percent": { "type": "integer", "minimum": 0, "maximum": 100 }
+      }
+    },
+    "drift_advisory": {
+      "type": ["string", "null"]
+    },
+    "deviation_explanation": {
+      "type": ["string", "null"]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "transitions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "phase", "command", "status", "started_at"],
+        "properties": {
+          "id": { "type": "string" },
+          "phase": { "type": "string" },
+          "command": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["IN_PROGRESS", "COMPLETED", "INTERRUPTED", "ABORTED", "SKIPPED"]
+          },
+          "started_at": { "type": "string", "format": "date-time" },
+          "completed_at": { "type": ["string", "null"], "format": "date-time" },
+          "duration_seconds": { "type": ["integer", "null"], "minimum": 0 },
+          "actor": { "type": "string" },
+          "notes": { "type": "string" }
+        }
+      }
+    }
+  }
+}

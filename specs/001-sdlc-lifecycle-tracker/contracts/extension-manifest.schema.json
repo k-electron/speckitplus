@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SpecKitExtensionManifestSchema1.0",
+  "type": "object",
+  "required": ["schema_version", "extension", "requires", "provides"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "extension": {
+      "type": "object",
+      "required": ["id", "name", "version", "description", "author", "repository", "license"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$"
+        },
+        "name": { "type": "string" },
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+.*$"
+        },
+        "description": { "type": "string", "maxLength": 120 },
+        "author": { "type": "string" },
+        "repository": { "type": "string", "format": "uri" },
+        "license": { "type": "string" },
+        "category": { "type": "string" },
+        "effect": { "type": "string", "enum": ["read-write", "read-only"] }
+      }
+    },
+    "requires": {
+      "type": "object",
+      "required": ["speckit_version"],
+      "properties": {
+        "speckit_version": { "type": "string" }
+      }
+    },
+    "provides": {
+      "type": "object",
+      "properties": {
+        "commands": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "file", "description"],
+            "properties": {
+              "name": { "type": "string" },
+              "file": { "type": "string" },
+              "description": { "type": "string" }
+            }
+          }
+        },
+        "hooks": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["command", "priority", "optional"],
+            "properties": {
+              "command": { "type": "string" },
+              "priority": { "type": "integer" },
+              "optional": { "type": "boolean" },
+              "description": { "type": "string" }
+            }
+          }
+        },
+        "templates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "file"],
+            "properties": {
+              "name": { "type": "string" },
+              "file": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}
