@@ -935,31 +935,36 @@ class TestLifecycleEngine(unittest.TestCase):
 
     def test_verify_version_actual_files(self) -> None:
         """Verify verify_version succeeds on repository extension.yml and catalog-submission.json."""
-        engine.verify_version("1.0.0", REPO_ROOT)
-        engine.verify_version("v1.0.0", REPO_ROOT)
+        manifest_data = engine.parse_yaml((REPO_ROOT / "extension.yml").read_text(encoding="utf-8"))
+        current_version = manifest_data.get("extension", {}).get("version", "1.0.1")
+        engine.verify_version(current_version, REPO_ROOT)
+        engine.verify_version(f"v{current_version}", REPO_ROOT)
 
     def test_verify_version_mismatch(self) -> None:
         """Verify mismatched version raises ValueError."""
         with self.assertRaises(ValueError):
-            engine.verify_version("2.0.0", REPO_ROOT)
+            engine.verify_version("99.99.99", REPO_ROOT)
 
     def test_verify_version_missing_files(self) -> None:
         """Verify missing manifest or catalog raises FileNotFoundError."""
         with self.assertRaises(FileNotFoundError):
-            engine.verify_version("1.0.0", self.temp_dir)
+            engine.verify_version("1.0.1", self.temp_dir)
 
     def test_cli_release_notes_and_verify_version_exit_codes(self) -> None:
         """Verify CLI subcommands adhere strictly to POSIX exit codes (0 success, 1 failure, 2 argument error)."""
         import subprocess
+
+        manifest_data = engine.parse_yaml((REPO_ROOT / "extension.yml").read_text(encoding="utf-8"))
+        current_version = manifest_data.get("extension", {}).get("version", "1.0.1")
 
         # Success exits with 0
         p = subprocess.run([sys.executable, str(ENGINE_PATH), "release-notes", "1.0.0"], capture_output=True, text=True)
         self.assertEqual(p.returncode, 0)
         self.assertIn("Dual-Engine Lifecycle Tracking Architecture", p.stdout)
 
-        p = subprocess.run([sys.executable, str(ENGINE_PATH), "verify-version", "1.0.0"], capture_output=True, text=True)
+        p = subprocess.run([sys.executable, str(ENGINE_PATH), "verify-version", current_version], capture_output=True, text=True)
         self.assertEqual(p.returncode, 0)
-        self.assertIn("Version consistency verified: 1.0.0", p.stdout)
+        self.assertIn(f"Version consistency verified: {current_version}", p.stdout)
 
         # Operational failures exit with 1
         p = subprocess.run([sys.executable, str(ENGINE_PATH), "release-notes", "9.9.9"], capture_output=True, text=True)

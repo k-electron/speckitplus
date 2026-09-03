@@ -2,7 +2,7 @@ schema_version: "1.0"
 extension:
   id: "lifecycle"
   name: "SDLC Lifecycle State Tracker"
-  version: "1.0.0"
+  version: "1.0.1"
   description: "Living SDLC state artifact tracker and workspace overview for Spec Kit features, bugs, and idea assessments"
   author: "Spec Kit Community"
   repository: "https://github.com/k-electron/speckitplus"
@@ -193,3 +193,175 @@ provides:
   templates:
     - name: "lifecycle"
       file: "templates/lifecycle-template.md"
+
+hooks:
+  before_specify:
+    command: "./scripts/hook-pre-command.sh specify"
+    priority: 10
+    optional: false
+    description: "Record command start and detect interruptions in lifecycle artifact"
+  after_specify:
+    command: "./scripts/hook-post-command.sh specify $EXIT_CODE"
+    priority: 10
+    optional: false
+    description: "Record specify completion in lifecycle artifact"
+  before_clarify:
+    command: "./scripts/hook-pre-command.sh clarify"
+    priority: 10
+    optional: false
+    description: "Record command start and detect interruptions in lifecycle artifact"
+  after_clarify:
+    command: "./scripts/hook-post-command.sh clarify $EXIT_CODE"
+    priority: 10
+    optional: false
+    description: "Record clarify completion in lifecycle artifact"
+  before_checklist:
+    command: "./scripts/hook-pre-command.sh checklist"
+    priority: 10
+    optional: false
+    description: "Record command start and detect interruptions in lifecycle artifact"
+  after_checklist:
+    command: "./scripts/hook-post-command.sh checklist $EXIT_CODE"
+    priority: 10
+    optional: false
+    description: "Record checklist completion in lifecycle artifact"
+  before_plan:
+    command: "./scripts/hook-pre-command.sh plan"
+    priority: 10
+    optional: false
+    description: "Record command start and detect interruptions in lifecycle artifact"
+  after_plan:
+    command: "./scripts/hook-post-command.sh plan $EXIT_CODE"
+    priority: 10
+    optional: false
+    description: "Record plan completion in lifecycle artifact"
+  before_tasks:
+    command: "./scripts/hook-pre-command.sh tasks"
+    priority: 10
+    optional: false
+    description: "Record command start and detect interruptions in lifecycle artifact"
+  after_tasks:
+    command: "./scripts/hook-post-command.sh tasks $EXIT_CODE"
+    priority: 10
+    optional: false
+    description: "Record tasks completion in lifecycle artifact"
+  before_taskstoissues:
+    command: "./scripts/hook-pre-command.sh taskstoissues"
+    priority: 10
+    optional: false
+    description: "Record command start and detect interruptions in lifecycle artifact"
+  after_taskstoissues:
+    command: "./scripts/hook-post-command.sh taskstoissues $EXIT_CODE"
+    priority: 10
+    optional: false
+    description: "Record taskstoissues completion in lifecycle artifact"
+  before_analyze:
+    command: "./scripts/hook-pre-command.sh analyze"
+    priority: 10
+    optional: false
+    description: "Record command start and detect interruptions in lifecycle artifact"
+  after_analyze:
+    command: "./scripts/hook-post-command.sh analyze $EXIT_CODE"
+    priority: 10
+    optional: false
+    description: "Record analyze completion in lifecycle artifact"
+  before_implement:
+    command: "./scripts/hook-pre-command.sh implement"
+    priority: 10
+    optional: false
+    description: "Record command start and detect interruptions in lifecycle artifact"
+  after_implement:
+    command: "./scripts/hook-post-command.sh implement $EXIT_CODE"
+    priority: 10
+    optional: false
+    description: "Record implement completion in lifecycle artifact"
+  before_converge:
+    command: "./scripts/hook-pre-command.sh converge"
+    priority: 10
+    optional: false
+    description: "Record command start and detect interruptions in lifecycle artifact"
+  after_converge:
+    command: "./scripts/hook-post-command.sh converge $EXIT_CODE"
+    priority: 10
+    optional: false
+    description: "Record converge completion in lifecycle artifact"
+  before_bug_assess:
+    command: "./scripts/hook-pre-command.sh bug_assess"
+    priority: 10
+    optional: false
+    description: "Record command start and detect interruptions in lifecycle artifact"
+  after_bug_assess:
+    command: "./scripts/hook-post-command.sh bug_assess $EXIT_CODE"
+    priority: 10
+    optional: false
+    description: "Record bug assess completion in lifecycle artifact"
+  before_bug_fix:
+    command: "./scripts/hook-pre-command.sh bug_fix"
+    priority: 10
+    optional: false
+    description: "Record command start and detect interruptions in lifecycle artifact"
+  after_bug_fix:
+    command: "./scripts/hook-post-command.sh bug_fix $EXIT_CODE"
+    priority: 10
+    optional: false
+    description: "Record bug fix completion in lifecycle artifact"
+  before_bug_test:
+    command: "./scripts/hook-pre-command.sh bug_test"
+    priority: 10
+    optional: false
+    description: "Record command start and detect interruptions in lifecycle artifact"
+  after_bug_test:
+    command: "./scripts/hook-post-command.sh bug_test $EXIT_CODE"
+    priority: 10
+    optional: false
+    description: "Record bug test completion in lifecycle artifact"
+  before_assess_intake:
+    command: "./scripts/hook-pre-command.sh assess_intake"
+    priority: 10
+    optional: false
+    description: "Record command start and detect interruptions in lifecycle artifact"
+  after_assess_intake:
+    command: "./scripts/hook-post-command.sh assess_intake $EXIT_CODE"
+    priority: 10
+    optional: false
+    description: "Record assess intake completion in lifecycle artifact"
+  before_assess_research:
+    command: "./scripts/hook-pre-command.sh assess_research"
+    priority: 10
+    optional: false
+    description: "Record command start and detect interruptions in lifecycle artifact"
+  after_assess_research:
+    command: "./scripts/hook-post-command.sh assess_research $EXIT_CODE"
+    priority: 10
+    optional: false
+    description: "Record assess research completion in lifecycle artifact"
+  before_assess_define:
+    command: "./scripts/hook-pre-command.sh assess_define"
+    priority: 10
+    optional: false
+    description: "Record command start and detect interruptions in lifecycle artifact"
+  after_assess_define:
+    command: "./scripts/hook-post-command.sh assess_define $EXIT_CODE"
+    priority: 10
+    optional: false
+    description: "Record assess define completion in lifecycle artifact"
+  before_assess_shape:
+    command: "./scripts/hook-pre-command.sh assess_shape"
+    priority: 10
+    optional: false
+    description: "Record command start and detect interruptions in lifecycle artifact"
+  after_assess_shape:
+    command: "./scripts/hook-post-command.sh assess_shape $EXIT_CODE"
+    priority: 10
+    optional: false
+    description: "Record assess shape completion in lifecycle artifact"
+  before_assess_decide:
+    command: "./scripts/hook-pre-command.sh assess_decide"
+    priority: 10
+    optional: false
+    description: "Record command start and detect interruptions in lifecycle artifact"
+  after_assess_decide:
+    command: "./scripts/hook-post-command.sh assess_decide $EXIT_CODE"
+    priority: 10
+    optional: false
+    description: "Record assess decide completion in lifecycle artifact"

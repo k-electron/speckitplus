@@ -3,7 +3,7 @@
   "extension": {
     "name": "SDLC Lifecycle State Tracker",
     "id": "lifecycle",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Living SDLC state artifact tracker and workspace overview for Spec Kit features, bugs, and idea assessments",
     "author": "Spec Kit Community",
     "repository": "https://github.com/k-electron/speckitplus",
@@ -13,7 +13,7 @@
     "license": "MIT",
     "category": "lifecycle",
     "effect": "read-write",
-    "download_url": "https://github.com/k-electron/speckitplus/archive/refs/tags/v1.0.0.zip",
+    "download_url": "https://github.com/k-electron/speckitplus/releases/download/v1.0.1/lifecycle-1.0.1.zip",
     "requires": {
       "speckit_version": ">=0.1.0"
     },

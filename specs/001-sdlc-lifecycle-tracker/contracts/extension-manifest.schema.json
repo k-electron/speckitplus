@@ -76,6 +76,19 @@
           }
         }
       }
+    },
+    "hooks": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["command", "priority", "optional"],
+        "properties": {
+          "command": { "type": "string" },
+          "priority": { "type": "integer" },
+          "optional": { "type": "boolean" },
+          "description": { "type": "string" }
+        }
+      }
     }
   }
 }

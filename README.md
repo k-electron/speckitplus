@@ -1,6 +1,6 @@
 # SpecKitPlus: SDLC Lifecycle State Tracker
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.0.1-blue.svg)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Dependencies](https://img.shields.io/badge/dependencies-Zero%20(Python%203%20stdlib)-success.svg)](scripts/lifecycle-engine.py)
 [![Spec Kit Compatibility](https://img.shields.io/badge/speckit-%3E%3D0.1.0-brightgreen.svg)](extension.yml)
@@ -30,7 +30,7 @@ Install via the method that matches your setup:
 specify extension add lifecycle
 
 # Method B: Direct from GitHub release archive
-specify extension add lifecycle --from https://github.com/k-electron/speckitplus/archive/refs/tags/v1.0.0.zip
+specify extension add lifecycle --from https://github.com/k-electron/speckitplus/releases/download/v1.0.1/lifecycle-1.0.1.zip
 
 # Method C: From a local clone or development branch
 specify extension add /path/to/speckitplus --dev
@@ -46,10 +46,10 @@ specify extension list
 
 You should see:
 ```text
-✓ SDLC Lifecycle State Tracker (v1.0.0)
+✓ SDLC Lifecycle State Tracker (v1.0.1)
    lifecycle
    Living SDLC state artifact tracker and workspace overview
-   Commands: 2 | Hooks: Active | Status: Enabled
+   Commands: 2 | Hooks: 34 | Priority: 10 | Status: Enabled
 ```
 
 ---

@@ -195,6 +195,11 @@ git -C "${DEV_PROJ_DIR}" init -q
     exit 1
   fi
 
+  if ! echo "${list_output}" | grep -qi "Hooks: 34"; then
+    echo "FAIL: 'lifecycle' extension did not report 34 hooks, got: ${list_output}" >&2
+    exit 1
+  fi
+
   EXT_TARGET_DIR="${DEV_PROJ_DIR}/.specify/extensions/lifecycle"
   if [[ ! -d "${EXT_TARGET_DIR}" ]]; then
     echo "FAIL: Target extension directory not created at ${EXT_TARGET_DIR}" >&2
@@ -263,6 +268,11 @@ git -C "${ARCHIVE_PROJ_DIR}" init -q
 
   if ! echo "${archive_list_output}" | grep -qi "lifecycle"; then
     echo "FAIL: 'lifecycle' not found in extension list after archive installation" >&2
+    exit 1
+  fi
+
+  if ! echo "${archive_list_output}" | grep -qi "Hooks: 34"; then
+    echo "FAIL: Archive installation did not report 34 hooks, got: ${archive_list_output}" >&2
     exit 1
   fi
 
