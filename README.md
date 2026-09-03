@@ -4,6 +4,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Dependencies](https://img.shields.io/badge/dependencies-Zero%20(Python%203%20stdlib)-success.svg)](scripts/lifecycle-engine.py)
 [![Spec Kit Compatibility](https://img.shields.io/badge/speckit-%3E%3D0.1.0-brightgreen.svg)](extension.yml)
+[![CI Quality Gates](https://github.com/k-electron/speckitplus/actions/workflows/ci.yml/badge.svg)](https://github.com/k-electron/speckitplus/actions/workflows/ci.yml)
+[![Release Extension](https://github.com/k-electron/speckitplus/actions/workflows/release.yml/badge.svg)](https://github.com/k-electron/speckitplus/actions/workflows/release.yml)
 
 > **A zero-dependency Spec Kit extension that turns every specification, bug, and product assessment into a self-documenting, living state artifact.**
 
@@ -306,6 +308,51 @@ The extension includes a complete automated test suite (contract tests, schema v
 ```bash
 ./tests/run_all_tests.sh
 ```
+
+---
+
+## Continuous Integration & Release Automation
+
+SpecKitPlus uses GitHub Actions for continuous quality assurance and zero-maintenance releases.
+
+### Multi-Platform CI Quality Gates (`.github/workflows/ci.yml`)
+
+Every pull request and push to `main` executes a multi-OS validation matrix:
+- **Platforms**: Ubuntu (`ubuntu-latest`) and macOS (`macos-latest`) across Python versions 3.10, 3.11, 3.12, and 3.13.
+- **Static Syntax Verification**: POSIX compliance checks via `bash -n` across all shell scripts and bytecode compilation via `python3 -m py_compile`.
+- **Contract & Regression Suites**: Validates workflow schemas, lifecycle state contracts, and executes all 9 integration suites via `./tests/run_all_tests.sh`.
+
+### Tag-Triggered Release Automation (`.github/workflows/release.yml`)
+
+Pushing a semver Git tag (`v*.*.*`) triggers automated, fail-closed release publishing:
+1. **Verification Gate**: Confirms version alignment across `extension.yml` and `catalog-submission.json`, runs contract verification under Python 3.11, and requires 100% test passage.
+2. **Deterministic Packaging**: Invokes `scripts/package-release.sh` to package runtime files into versioned (`lifecycle-<version>.zip`) and alias (`lifecycle.zip`) archives while excluding development files, caches, and test suites.
+3. **Checksum & Notes Generation**: Generates SHA256 checksums (`*.sha256`) and extracts release notes from `CHANGELOG.md`.
+4. **GitHub Release Publication**: Publishes the release via GitHub CLI (`gh release create`) with attached zip archives and checksums.
+
+### Manual Dispatch & Dry-Run Execution
+
+Maintainers can trigger `.github/workflows/release.yml` manually using `workflow_dispatch`:
+- **Inputs**:
+  - `version`: Target version override (required when dispatching from a branch).
+  - `dry_run`: When `true`, packages archives and verifies checksums without creating a GitHub release.
+  - `draft`: When `true`, creates an unpublished draft release for maintainer review.
+
+Example manual invocations:
+```bash
+# Dry-run release validation on a branch
+gh workflow run release.yml -f version="1.0.0" -f dry_run="true"
+
+# Publish as a draft release
+gh workflow run release.yml -f version="1.0.0" -f draft="true"
+```
+
+### Release Assets & Community Catalog PR
+
+Every release job appends a Markdown report to `$GITHUB_STEP_SUMMARY` including:
+- Cryptographic SHA256 checksums for all release archives.
+- Download URLs for distribution zip bundles.
+- Ready-to-use JSON descriptor and contribution instructions for opening a pull request against the official Spec Kit community catalog ([`github/spec-kit`](https://github.com/github/spec-kit)).
 
 ---
 

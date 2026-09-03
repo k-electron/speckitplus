@@ -1,0 +1,201 @@
+name: Release Extension
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Target release version override (e.g. 1.0.0)"
+        required: false
+        type: string
+        default: ""
+      dry_run:
+        description: "Dry run (skip creating GitHub release)"
+        required: false
+        type: boolean
+        default: false
+      draft:
+        description: "Create draft release"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  verify-release:
+    name: verify-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Ensure Spec Kit CLI available
+        run: |
+          if ! command -v specify >/dev/null 2>&1; then
+            pipx install specify-cli || python3 -m pip install specify-cli
+          fi
+
+      - name: Resolve target version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          REF_NAME: ${{ github.ref_name }}
+          REF_TYPE: ${{ github.ref_type }}
+        run: |
+          if [ -n "${INPUT_VERSION}" ]; then
+            TARGET_VERSION="${INPUT_VERSION#v}"
+          elif [ "${REF_TYPE}" = "branch" ]; then
+            echo "Error: inputs.version is required when dispatching from a branch (${REF_NAME})" >&2
+            exit 1
+          else
+            TARGET_VERSION="${REF_NAME#v}"
+          fi
+          echo "TARGET_VERSION=${TARGET_VERSION}" >> "$GITHUB_ENV"
+          echo "Target release version: ${TARGET_VERSION}"
+
+      - name: Verify version consistency
+        run: |
+          python3 scripts/lifecycle-engine.py verify-version "${TARGET_VERSION}"
+
+      - name: Run regression test suite
+        run: |
+          ./tests/run_all_tests.sh
+
+  publish-release:
+    name: publish-release
+    needs: [verify-release]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Package release archive
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          REF_NAME: ${{ github.ref_name }}
+          REF_TYPE: ${{ github.ref_type }}
+        run: |
+          if [ -n "${INPUT_VERSION}" ]; then
+            TARGET_VERSION="${INPUT_VERSION#v}"
+          elif [ "${REF_TYPE}" = "branch" ]; then
+            echo "Error: inputs.version is required when dispatching from a branch (${REF_NAME})" >&2
+            exit 1
+          else
+            TARGET_VERSION="${REF_NAME#v}"
+          fi
+          echo "TARGET_VERSION=${TARGET_VERSION}" >> "$GITHUB_ENV"
+          ./scripts/package-release.sh -v "${TARGET_VERSION}" -o dist
+
+      - name: Extract release notes
+        run: |
+          python3 scripts/lifecycle-engine.py release-notes "${TARGET_VERSION}" > dist/release-notes.md
+
+      - name: Verify catalog submission descriptor
+        run: |
+          python3 scripts/lifecycle-engine.py verify-version "${TARGET_VERSION}"
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          DRAFT: ${{ inputs.draft }}
+        run: |
+          if [ "${DRY_RUN}" != "true" ]; then
+            EXTRA_FLAGS=""
+            if [ "${DRAFT}" = "true" ]; then
+              EXTRA_FLAGS="--draft"
+            fi
+            # shellcheck disable=SC2086
+            gh release create "v${TARGET_VERSION}" \
+              "dist/lifecycle-${TARGET_VERSION}.zip" \
+              "dist/lifecycle.zip" \
+              dist/*.sha256 \
+              --title "v${TARGET_VERSION}" \
+              --notes-file dist/release-notes.md \
+              ${EXTRA_FLAGS}
+          else
+            echo "Dry run enabled: Skipping GitHub Release publication."
+          fi
+
+      - name: Generate release summary
+        env:
+          DRY_RUN: ${{ inputs.dry_run }}
+          DRAFT: ${{ inputs.draft }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          if [ "${DRY_RUN}" = "true" ]; then
+            RELEASE_STATUS="Dry-Run (Packaging verified, release not published)"
+          elif [ "${DRAFT}" = "true" ]; then
+            RELEASE_STATUS="Published (Draft Release)"
+          else
+            RELEASE_STATUS="Published (Public Release)"
+          fi
+          export RELEASE_STATUS
+
+          python3 - <<'PYEOF' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          import os
+
+          target_version = os.environ.get("TARGET_VERSION", "")
+          status = os.environ.get("RELEASE_STATUS", "")
+          repo = os.environ.get("GITHUB_REPOSITORY", "")
+          sha = os.environ.get("GITHUB_SHA", "")
+
+          ver_hash = ""
+          alias_hash = ""
+          try:
+              with open(f"dist/lifecycle-{target_version}.zip.sha256", "r", encoding="utf-8") as f:
+                  ver_hash = f.read().split()[0]
+          except Exception:
+              pass
+          try:
+              with open("dist/lifecycle.zip.sha256", "r", encoding="utf-8") as f:
+                  alias_hash = f.read().split()[0]
+          except Exception:
+              pass
+
+          catalog_entry = {}
+          if os.path.exists("catalog-submission.json"):
+              with open("catalog-submission.json", "r", encoding="utf-8") as f:
+                  data = json.load(f)
+                  catalog_entry = data.get("extension", data)
+
+          catalog_entry["version"] = target_version
+          catalog_entry["download_url"] = f"https://github.com/{repo}/releases/download/v{target_version}/lifecycle-{target_version}.zip"
+
+          print(f"# Release Extension: v{target_version}\n")
+          print(f"### Status: {status}\n")
+          print(f"- **Tag / Version**: `v{target_version}`")
+          print(f"- **Repository**: `{repo}`")
+          print(f"- **Commit**: `{sha}`\n")
+          print("## Release Assets & SHA256 Checksums\n")
+          print("| Asset | SHA256 Checksum |")
+          print("|---|---|")
+          print(f"| `lifecycle-{target_version}.zip` | `{ver_hash}` |")
+          print(f"| `lifecycle.zip` | `{alias_hash}` |")
+          print(f"| `lifecycle-{target_version}.zip.sha256` | `-` |")
+          print(f"| `lifecycle.zip.sha256` | `-` |\n")
+          print("## Community Catalog PR Instructions\n")
+          print("To publish this version to the official Spec Kit community catalog (`github/spec-kit`):\n")
+          print("1. Fork or clone [github/spec-kit](https://github.com/github/spec-kit).")
+          print("2. Update or add the entry for `lifecycle` in `extensions/catalog.community.json`:\n")
+          print("```json")
+          print(json.dumps(catalog_entry, indent=2))
+          print("```\n")
+          print("3. Submit a pull request to `github/spec-kit` with title:")
+          print(f"   `feat(catalog): add/update lifecycle extension v{target_version}`\n")
+          PYEOF

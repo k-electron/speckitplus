@@ -100,6 +100,10 @@ run_suite "Integration: Dev Install & Packaging (US6)" \
 run_suite "Integration: State Reconciliation & Interruption" \
   ./tests/integration/test_reconciliation.sh
 
+# 9. Release Archive Packaging Integration Test
+run_suite "Integration: Release Archive Packaging (US2)" \
+  ./tests/integration/test_release_packaging.sh
+
 TOTAL_DURATION=$(( SECONDS - TOTAL_START ))
 
 # Final Summary Report

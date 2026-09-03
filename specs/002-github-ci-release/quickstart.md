@@ -12,12 +12,12 @@ Ensure all CI quality gates pass locally before opening a pull request or pushin
 
 ```bash
 # 1. Verify shell script syntax
-bash -n scripts/*.sh tests/integration/*.sh
+bash -n scripts/*.sh tests/*.sh tests/integration/*.sh
 
 # 2. Verify Python syntax compilation
 python3 -m py_compile scripts/lifecycle-engine.py tests/contract/*.py
 
-# 3. Run full regression test suite (all 8 suites)
+# 3. Run full regression test suite (all 9 suites)
 ./tests/run_all_tests.sh
 ```
 

@@ -13,6 +13,7 @@ from importlib.machinery import SourceFileLoader
 import json
 from pathlib import Path
 import shutil
+import sys
 import tempfile
 import unittest
 
@@ -901,6 +902,83 @@ class TestLifecycleEngine(unittest.TestCase):
         self.assertTrue(lifecycle_file.is_file())
         fm, _ = engine.read_lifecycle_file(lifecycle_file)
         engine.validate_schema(fm, self.schema)
+
+    # --------------------------------------------------------------------------
+    # T008: Release Notes & Version Verification Tests
+    # --------------------------------------------------------------------------
+
+    def test_normalize_version(self) -> None:
+        """Verify version normalization handles leading 'v', 'V', and whitespace."""
+        self.assertEqual(engine.normalize_version("1.0.0"), "1.0.0")
+        self.assertEqual(engine.normalize_version("v1.0.0"), "1.0.0")
+        self.assertEqual(engine.normalize_version("V1.0.0"), "1.0.0")
+        self.assertEqual(engine.normalize_version("  v2.1.3  "), "2.1.3")
+
+    def test_extract_release_notes_actual_changelog(self) -> None:
+        """Verify extract_release_notes on repository CHANGELOG.md for v1.0.0."""
+        notes_bare = engine.extract_release_notes("1.0.0", REPO_ROOT)
+        self.assertIn("### Added", notes_bare)
+        self.assertIn("Dual-Engine Lifecycle Tracking Architecture", notes_bare)
+
+        notes_v = engine.extract_release_notes("v1.0.0", REPO_ROOT)
+        self.assertEqual(notes_bare, notes_v)
+
+    def test_extract_release_notes_nonexistent_version(self) -> None:
+        """Verify non-existent version raises ValueError."""
+        with self.assertRaises(ValueError):
+            engine.extract_release_notes("9.9.9", REPO_ROOT)
+
+    def test_extract_release_notes_missing_changelog(self) -> None:
+        """Verify missing CHANGELOG.md raises FileNotFoundError."""
+        with self.assertRaises(FileNotFoundError):
+            engine.extract_release_notes("1.0.0", self.temp_dir)
+
+    def test_verify_version_actual_files(self) -> None:
+        """Verify verify_version succeeds on repository extension.yml and catalog-submission.json."""
+        engine.verify_version("1.0.0", REPO_ROOT)
+        engine.verify_version("v1.0.0", REPO_ROOT)
+
+    def test_verify_version_mismatch(self) -> None:
+        """Verify mismatched version raises ValueError."""
+        with self.assertRaises(ValueError):
+            engine.verify_version("2.0.0", REPO_ROOT)
+
+    def test_verify_version_missing_files(self) -> None:
+        """Verify missing manifest or catalog raises FileNotFoundError."""
+        with self.assertRaises(FileNotFoundError):
+            engine.verify_version("1.0.0", self.temp_dir)
+
+    def test_cli_release_notes_and_verify_version_exit_codes(self) -> None:
+        """Verify CLI subcommands adhere strictly to POSIX exit codes (0 success, 1 failure, 2 argument error)."""
+        import subprocess
+
+        # Success exits with 0
+        p = subprocess.run([sys.executable, str(ENGINE_PATH), "release-notes", "1.0.0"], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0)
+        self.assertIn("Dual-Engine Lifecycle Tracking Architecture", p.stdout)
+
+        p = subprocess.run([sys.executable, str(ENGINE_PATH), "verify-version", "1.0.0"], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0)
+        self.assertIn("Version consistency verified: 1.0.0", p.stdout)
+
+        # Operational failures exit with 1
+        p = subprocess.run([sys.executable, str(ENGINE_PATH), "release-notes", "9.9.9"], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 1)
+        self.assertIn("Error:", p.stderr)
+
+        p = subprocess.run([sys.executable, str(ENGINE_PATH), "verify-version", "9.9.9"], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 1)
+        self.assertIn("Error:", p.stderr)
+
+        # CLI argument errors exit with 2
+        p = subprocess.run([sys.executable, str(ENGINE_PATH), "release-notes"], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 2)
+
+        p = subprocess.run([sys.executable, str(ENGINE_PATH), "verify-version"], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 2)
+
+        p = subprocess.run([sys.executable, str(ENGINE_PATH)], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 2)
 
 
 if __name__ == "__main__":

@@ -2317,6 +2317,106 @@ def compile_overview(
     }
 
 
+def normalize_version(version: str) -> str:
+    v = version.strip()
+    if v.startswith("v") or v.startswith("V"):
+        v = v[1:]
+    return v.strip()
+
+
+def extract_release_notes(version: str, repo_root: Path | None = None) -> str:
+    norm_version = normalize_version(version)
+    if not norm_version:
+        raise ValueError("Version string cannot be empty")
+
+    if repo_root is None:
+        repo_root = find_repo_root(Path(__file__).resolve())
+
+    changelog_path = repo_root / "CHANGELOG.md"
+    if not changelog_path.is_file():
+        raise FileNotFoundError(f"CHANGELOG.md not found in {repo_root}")
+
+    with open(changelog_path, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+
+    esc_v = re.escape(norm_version)
+    heading_re = re.compile(
+        rf"^##\s+(?:\[v?{esc_v}\](?:\s*[-—]|\s*\(|\s*$)?|v?{esc_v}(?:\s*[-—]|\s*\(|\s*$))"
+    )
+
+    found = False
+    collected: list[str] = []
+    for line in lines:
+        if not found:
+            if heading_re.match(line.strip()):
+                found = True
+                continue
+        else:
+            if re.match(r"^##\s+", line):
+                break
+            collected.append(line)
+
+    if not found:
+        raise ValueError(f"Release notes for version '{norm_version}' not found in {changelog_path}")
+
+    return "".join(collected).strip()
+
+
+def verify_version(version: str, repo_root: Path | None = None) -> None:
+    norm_version = normalize_version(version)
+    if not norm_version:
+        raise ValueError("Version string cannot be empty")
+
+    if repo_root is None:
+        repo_root = find_repo_root(Path(__file__).resolve())
+
+    manifest_path = repo_root / "extension.yml"
+    if not manifest_path.is_file():
+        raise FileNotFoundError(f"extension.yml not found in {repo_root}")
+
+    catalog_path = repo_root / "catalog-submission.json"
+    if not catalog_path.is_file():
+        raise FileNotFoundError(f"catalog-submission.json not found in {repo_root}")
+
+    with open(manifest_path, "r", encoding="utf-8") as f:
+        manifest_text = f.read()
+
+    ext_data = parse_yaml(manifest_text)
+    ext_version = None
+    if isinstance(ext_data, dict):
+        ext_section = ext_data.get("extension")
+        if isinstance(ext_section, dict):
+            ext_version = ext_section.get("version")
+        else:
+            ext_version = ext_data.get("version")
+
+    if ext_version != norm_version:
+        raise ValueError(f"extension.yml version '{ext_version}' does not match target version '{norm_version}'")
+
+    with open(catalog_path, "r", encoding="utf-8") as f:
+        catalog_text = f.read()
+
+    cat_data = json.loads(catalog_text)
+    cat_version = None
+    download_url = ""
+    if isinstance(cat_data, dict):
+        ext_section = cat_data.get("extension")
+        if isinstance(ext_section, dict):
+            cat_version = ext_section.get("version")
+            download_url = ext_section.get("download_url", "")
+        else:
+            cat_version = cat_data.get("version")
+            download_url = cat_data.get("download_url", "")
+
+    if cat_version != norm_version:
+        raise ValueError(f"catalog-submission.json version '{cat_version}' does not match target version '{norm_version}'")
+
+    if norm_version not in download_url:
+        raise ValueError(f"catalog-submission.json download_url '{download_url}' does not contain target version '{norm_version}'")
+
+    print(f"Version consistency verified: {norm_version}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         prog="lifecycle-engine.py",
@@ -2383,11 +2483,19 @@ def main() -> int:
     overview_p.add_argument("--all", action="store_true", help="Include completed items table")
     overview_p.add_argument("--json", action="store_true", help="Output JSON format")
 
+    notes_p = subparsers.add_parser("release-notes", help="Extract release notes from CHANGELOG.md for specified version")
+    notes_p.add_argument("version", help="Target release version (e.g. 1.0.0 or v1.0.0)")
+    notes_p.add_argument("--repo-root", default=None, help="Repository root directory")
+
+    ver_p = subparsers.add_parser("verify-version", help="Verify version consistency across extension.yml and catalog-submission.json")
+    ver_p.add_argument("version", help="Target release version (e.g. 1.0.0 or v1.0.0)")
+    ver_p.add_argument("--repo-root", default=None, help="Repository root directory")
+
     args = parser.parse_args()
 
     if not args.subcommand:
-        parser.print_help()
-        return 1
+        parser.print_help(sys.stderr)
+        return 2
 
     try:
         if args.subcommand == "resolve-dir":
@@ -2551,6 +2659,17 @@ def main() -> int:
                 print(json.dumps(json_payload, indent=2))
             else:
                 print(format_overview_text(res, include_all=args.all))
+            return 0
+
+        if args.subcommand == "release-notes":
+            repo_root = Path(args.repo_root).resolve() if args.repo_root else find_repo_root(Path(__file__).resolve())
+            notes = extract_release_notes(args.version, repo_root)
+            print(notes)
+            return 0
+
+        if args.subcommand == "verify-version":
+            repo_root = Path(args.repo_root).resolve() if args.repo_root else find_repo_root(Path(__file__).resolve())
+            verify_version(args.version, repo_root)
             return 0
 
     except Exception as e:

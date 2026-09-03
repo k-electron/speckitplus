@@ -25,14 +25,14 @@
 - **Steps**:
   1. `actions/checkout@v4`
   2. `actions/setup-python@v5` with matrix `python-version`
-  3. **Static Syntax Check**:
-     - Shell syntax: `bash -n scripts/*.sh tests/integration/*.sh`
+  3. **Ensure Spec Kit CLI available**:
+     - Prerequisites setup: install `specify-cli` via `pipx` or `python3 -m pip` if not already installed (required for integration tests)
+  4. **Static Syntax Check**:
+     - Shell syntax: `bash -n scripts/*.sh tests/*.sh tests/integration/*.sh`
      - Python syntax: `python3 -m py_compile scripts/lifecycle-engine.py tests/contract/*.py`
-  4. **Contract Verification**:
-     - Manifest schema test: `python3 -m unittest tests/contract/test_manifest_schema.py`
-     - Lifecycle schema test: `python3 -m unittest tests/contract/test_lifecycle_schema.py`
-     - Lifecycle engine contract test: `python3 -m unittest tests/contract/test_lifecycle_engine.py`
-  5. **Full Regression Test Suite**:
+  5. **Contract Verification**:
+     - Contract test suite: `python3 -m unittest discover -s tests/contract -p "test_*.py"`
+  6. **Full Regression Test Suite**:
      - Run `./tests/run_all_tests.sh`
      - Asserts 8/8 suites pass cleanly.
 

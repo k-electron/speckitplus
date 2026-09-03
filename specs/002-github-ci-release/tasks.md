@@ -10,8 +10,8 @@
 
 **Purpose**: Initialize workflow directories and packaging script skeletons.
 
-- [ ] T001 Create `.github/workflows` directory structure
-- [ ] T002 [P] Create packaging script skeleton in `scripts/package-release.sh`
+- [x] T001 Create `.github/workflows` directory structure
+- [x] T002 [P] Create packaging script skeleton in `scripts/package-release.sh`
 
 ---
 
@@ -21,9 +21,9 @@
 
 **⚠️ CRITICAL**: No release workflow work can begin until this phase is complete.
 
-- [ ] T003 Implement portable release archive packager in `scripts/package-release.sh` (depends on T002)
-- [ ] T004 [P] Create integration test for packaging script in `tests/integration/test_release_packaging.sh` (depends on T002)
-- [ ] T005 Configure executable permissions (`chmod +x`) on `scripts/package-release.sh` and `tests/integration/test_release_packaging.sh` (depends on T003, T004)
+- [x] T003 Implement portable release archive packager in `scripts/package-release.sh` (depends on T002)
+- [x] T004 [P] Create integration test for packaging script in `tests/integration/test_release_packaging.sh` (depends on T002)
+- [x] T005 Configure executable permissions (`chmod +x`) on `scripts/package-release.sh` and `tests/integration/test_release_packaging.sh` (depends on T003, T004)
 
 **Checkpoint**: Packaging script builds clean zip archives and computes SHA256 checksums — workflow implementation can now begin.
 
@@ -36,8 +36,8 @@
 **Independent Test**: Trigger workflow on PR or push; verify `bash -n`, `py_compile`, contract tests, and `./tests/run_all_tests.sh` pass cleanly on Linux and macOS runners within 3 minutes.
 
 ### Implementation for User Story 1
-- [ ] T006 [P] [US1] Create CI workflow definition with multi-OS runner matrix in `.github/workflows/ci.yml` (depends on T001)
-- [ ] T007 [US1] Validate CI workflow YAML syntax and contract conformance in `tests/contract/test_ci_workflow.py` (depends on T006)
+- [x] T006 [P] [US1] Create CI workflow definition with multi-OS runner matrix in `.github/workflows/ci.yml` (depends on T001)
+- [x] T007 [US1] Validate CI workflow YAML syntax and contract conformance in `tests/contract/test_ci_workflow.py` (depends on T006)
 
 **Checkpoint**: User Story 1 is fully functional. PRs and main pushes are automatically gated across Linux and macOS.
 
@@ -50,9 +50,9 @@
 **Independent Test**: Push tag `v*.*.*`; observe workflow run verification gate, package clean archive without dev files, extract release notes, and publish GitHub Release with attached assets.
 
 ### Implementation for User Story 2
-- [ ] T008 [P] [US2] Implement release notes extraction (`release-notes <VERSION>`) and version alignment (`verify-version <VERSION>`) subcommands in `scripts/lifecycle-engine.py` (depends on T003)
-- [ ] T009 [US2] Create tag-triggered release workflow in `.github/workflows/release.yml` (depends on T001, T003, T008)
-- [ ] T010 [US2] Validate release workflow YAML syntax and contract conformance in `tests/contract/test_release_workflow.py` (depends on T009)
+- [x] T008 [P] [US2] Implement release notes extraction (`release-notes <VERSION>`) and version alignment (`verify-version <VERSION>`) subcommands in `scripts/lifecycle-engine.py` (depends on T003)
+- [x] T009 [US2] Create tag-triggered release workflow in `.github/workflows/release.yml` (depends on T001, T003, T008)
+- [x] T010 [US2] Validate release workflow YAML syntax and contract conformance in `tests/contract/test_release_workflow.py` (depends on T009)
 
 **Checkpoint**: User Story 2 is complete. Pushing a Git tag automatically produces a verified GitHub Release with distribution assets.
 
@@ -65,8 +65,8 @@
 **Independent Test**: Run workflow dispatch with `dry_run: true`; verify archive and checksums are built and summary is rendered without creating a public release.
 
 ### Implementation for User Story 3
-- [ ] T011 [US3] Add `workflow_dispatch` trigger with version, dry_run, and draft inputs to `.github/workflows/release.yml` (depends on T009)
-- [ ] T012 [US3] Add `$GITHUB_STEP_SUMMARY` formatting with release status, SHA256 hashes, and community catalog PR instructions in `.github/workflows/release.yml` (depends on T011)
+- [x] T011 [US3] Add `workflow_dispatch` trigger with version, dry_run, and draft inputs to `.github/workflows/release.yml` (depends on T009)
+- [x] T012 [US3] Add `$GITHUB_STEP_SUMMARY` formatting with release status, SHA256 hashes, and community catalog PR instructions in `.github/workflows/release.yml` (depends on T011)
 
 **Checkpoint**: User Story 3 is complete. Maintainers can test releases safely via dry-run and inspect generated community catalog metadata.
 
@@ -76,9 +76,9 @@
 
 **Purpose**: Test suite integration, documentation, and end-to-end quickstart validation.
 
-- [ ] T013 Integrate `test_release_packaging.sh` into `tests/run_all_tests.sh` (depends on T004, T005)
-- [ ] T014 [P] Update `README.md` with CI badges and GitHub Actions release guide (depends on T006, T009, T011)
-- [ ] T015 Validate end-to-end local pre-flight and dry-run workflow against `specs/002-github-ci-release/quickstart.md` (depends on T003, T006, T009, T013)
+- [x] T013 Integrate `test_release_packaging.sh` into `tests/run_all_tests.sh` (depends on T004, T005)
+- [x] T014 [P] Update `README.md` with CI badges and GitHub Actions release guide (depends on T006, T009, T011)
+- [x] T015 Validate end-to-end local pre-flight and dry-run workflow against `specs/002-github-ci-release/quickstart.md` (depends on T003, T006, T009, T013)
 
 ---
 

@@ -1,0 +1,48 @@
+name: CI Quality Gates
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  quality-gates:
+    name: quality-gates (${{ matrix.os }}, ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ['3.10', '3.11', '3.12', '3.13']
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # specify-cli is required for end-to-end extension installation tests in tests/integration/test_dev_install.sh
+      - name: Ensure Spec Kit CLI available
+        run: |
+          if ! command -v specify >/dev/null 2>&1; then
+            pipx install specify-cli || python3 -m pip install specify-cli
+          fi
+
+      - name: Static Syntax Check
+        run: |
+          bash -n scripts/*.sh tests/*.sh tests/integration/*.sh
+          python3 -m py_compile scripts/lifecycle-engine.py tests/contract/*.py
+
+      - name: Contract Verification
+        run: |
+          python3 -m unittest discover -s tests/contract -p "test_*.py"
+
+      - name: Full Regression Test Suite
+        run: ./tests/run_all_tests.sh

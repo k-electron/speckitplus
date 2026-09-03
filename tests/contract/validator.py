@@ -30,9 +30,34 @@ def _strip_comments(line: str) -> str:
             in_single = not in_single
         elif ch == '"' and not in_single:
             in_double = not in_double
-        elif ch == "#" and not in_single and not in_double:
+        elif ch == "#" and not in_single and not in_double and (i == 0 or line[i - 1] in (" ", "\t")):
             return line[:i]
     return line
+
+
+def _split_flow_items(s: str) -> list[str]:
+    """Split comma-separated flow sequence or mapping items respecting quotes."""
+    items: list[str] = []
+    cur: list[str] = []
+    in_single = False
+    in_double = False
+    for ch in s:
+        if ch == "'" and not in_double:
+            in_single = not in_single
+            cur.append(ch)
+        elif ch == '"' and not in_single:
+            in_double = not in_double
+            cur.append(ch)
+        elif ch == "," and not in_single and not in_double:
+            items.append("".join(cur).strip())
+            cur = []
+        else:
+            cur.append(ch)
+    if cur:
+        rem = "".join(cur).strip()
+        if rem:
+            items.append(rem)
+    return items
 
 
 def _parse_scalar(val: str) -> Any:
@@ -44,6 +69,21 @@ def _parse_scalar(val: str) -> Any:
         return []
     if val == "{}":
         return {}
+    if val.startswith("[") and val.endswith("]"):
+        inner = val[1:-1].strip()
+        if not inner:
+            return []
+        return [_parse_scalar(item) for item in _split_flow_items(inner)]
+    if val.startswith("{") and val.endswith("}"):
+        inner = val[1:-1].strip()
+        if not inner:
+            return {}
+        mapping: dict[str, Any] = {}
+        for item in _split_flow_items(inner):
+            if ":" in item:
+                k, _, v = item.partition(":")
+                mapping[_parse_scalar(k)] = _parse_scalar(v)
+        return mapping
     if val.lower() in ("null", "~"):
         return None
     if val.lower() == "true":
@@ -59,6 +99,24 @@ def _parse_scalar(val: str) -> Any:
     if re.match(r"^-?\d+\.\d+$", val):
         return float(val)
     return val
+
+
+def _consume_block_scalar(
+    processed: list[tuple[int, str, int]], idx: int, parent_indent: int
+) -> tuple[str, int]:
+    """Consume lines belonging to a multiline block scalar (| or >)."""
+    scalar_lines: list[str] = []
+    if idx >= len(processed) or processed[idx][0] <= parent_indent:
+        return "", idx
+    block_indent = processed[idx][0]
+    while idx < len(processed):
+        indent, content, _ = processed[idx]
+        if indent <= parent_indent:
+            break
+        extra = " " * (indent - block_indent)
+        scalar_lines.append(f"{extra}{content}")
+        idx += 1
+    return "\n".join(scalar_lines), idx
 
 
 def parse_yaml(text: str) -> Any:
@@ -116,7 +174,9 @@ def parse_yaml(text: str) -> Any:
                 m: dict[str, Any] = {}
                 sub_indent = processed[idx][0] if (idx < len(processed) and processed[idx][0] > indent) else indent + 2
 
-                if val != "":
+                if val in ("|", "|-", ">", ">-"):
+                    m[key], idx = _consume_block_scalar(processed, idx, indent)
+                elif val != "":
                     m[key] = _parse_scalar(val)
                 else:
                     if idx < len(processed) and processed[idx][0] > indent:
@@ -134,7 +194,9 @@ def parse_yaml(text: str) -> Any:
                         sub_k = sub_k.strip()
                         sub_v = sub_v.strip()
                         idx += 1
-                        if sub_v != "":
+                        if sub_v in ("|", "|-", ">", ">-"):
+                            m[sub_k], idx = _consume_block_scalar(processed, idx, sub_indent)
+                        elif sub_v != "":
                             m[sub_k] = _parse_scalar(sub_v)
                         else:
                             if idx < len(processed) and processed[idx][0] > next_indent:
@@ -165,7 +227,9 @@ def parse_yaml(text: str) -> Any:
                 key = key[1:-1]
             val = val.strip()
             idx += 1
-            if val != "":
+            if val in ("|", "|-", ">", ">-"):
+                res[key], idx = _consume_block_scalar(processed, idx, indent)
+            elif val != "":
                 res[key] = _parse_scalar(val)
             else:
                 if idx < len(processed) and processed[idx][0] > indent:
