@@ -23,6 +23,7 @@ Optional arguments:
 1. Run `./scripts/lifecycle-engine.py status` to query the state machine.
 2. Review the output fields:
    - **Track**: `feature`, `bug`, `assessment`, or `custom`
+   - **Title**: Canonical human-readable title extracted from `spec.md`, updated automatically across milestones
    - **Current Phase**: Current SDLC milestone (e.g. `PLANNED`, `TASKED`, `IMPLEMENTING`, `CONVERGED`)
    - **Sub-Status**: Health and execution state (`active`, `revised`, `interrupted`, `converged`, `aborted`)
    - **Next Action**: Recommended next slash command and rationale

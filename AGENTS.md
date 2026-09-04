@@ -28,7 +28,7 @@ SpecKitPlus is an official extension for [Spec Kit](https://github.com/github/sp
 └── tests/
     ├── contract/               # Schema conformance tests (Python unittest)
     ├── integration/            # Multi-track, recovery & install tests (POSIX bash)
-    └── run_all_tests.sh        # Full regression orchestrator (9 suites)
+    └── run_all_tests.sh        # Full regression orchestrator (10 suites)
 ```
 
 ## 3. Implementation Standards

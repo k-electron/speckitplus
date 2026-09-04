@@ -157,6 +157,10 @@ EXCLUDES=(
   "*/Thumbs.db"
 )
 
+# Ensure packaged archives preserve standard 0755 executable permissions
+# for zip/tar extractions regardless of local umask.
+chmod 755 "${REPO_ROOT}/scripts"/*.sh "${REPO_ROOT}/scripts"/*.py 2>/dev/null || true
+
 if ! (cd "${REPO_ROOT}" && zip -q -r "${ABS_VERSIONED_ZIP}" "${ENTRIES_TO_PACKAGE[@]}" -x "${EXCLUDES[@]}"); then
   echo "Error: Failed to create release archive ${ABS_VERSIONED_ZIP}" >&2
   exit 1

@@ -220,6 +220,21 @@ git -C "${DEV_PROJ_DIR}" init -q
     echo "FAIL: Command definition missing at ${EXT_TARGET_DIR}/commands/speckit.lifecycle.overview.md" >&2
     exit 1
   fi
+
+  if [[ ! -x "${EXT_TARGET_DIR}/scripts/hook-pre-command.sh" ]]; then
+    echo "FAIL: Runtime script hook-pre-command.sh is not executable at ${EXT_TARGET_DIR}/scripts/hook-pre-command.sh" >&2
+    exit 1
+  fi
+
+  if [[ ! -x "${EXT_TARGET_DIR}/scripts/hook-post-command.sh" ]]; then
+    echo "FAIL: Runtime script hook-post-command.sh is not executable at ${EXT_TARGET_DIR}/scripts/hook-post-command.sh" >&2
+    exit 1
+  fi
+
+  if [[ ! -x "${EXT_TARGET_DIR}/scripts/lifecycle-engine.py" ]]; then
+    echo "FAIL: Runtime script lifecycle-engine.py is not executable at ${EXT_TARGET_DIR}/scripts/lifecycle-engine.py" >&2
+    exit 1
+  fi
 )
 echo "PASS: --dev installation verified successfully."
 
@@ -289,6 +304,43 @@ git -C "${ARCHIVE_PROJ_DIR}" init -q
 
   if [[ ! -x "${ARCHIVE_EXT_DIR}/scripts/hook-post-command.sh" ]]; then
     echo "FAIL: Hook script hook-post-command.sh is not executable after installation" >&2
+    exit 1
+  fi
+
+  # Spec Kit safe zip extraction only chmods *.sh files, leaving lifecycle-engine.py non-executable.
+  # Ensure execute permission is cleared so we strictly verify self-healing recovery by the hook script.
+  chmod -x "${ARCHIVE_EXT_DIR}/scripts/lifecycle-engine.py" 2>/dev/null || true
+
+  # Seed a minimal specification target directory so hooks can resolve target context without manual arguments
+  mkdir -p "${ARCHIVE_PROJ_DIR}/specs/001-archive-feature"
+  echo "# Archive Feature Spec" > "${ARCHIVE_PROJ_DIR}/specs/001-archive-feature/spec.md"
+
+  echo "Executing lifecycle pre-hook in installed project directory..."
+  if ! "${ARCHIVE_EXT_DIR}/scripts/hook-pre-command.sh" specify; then
+    echo "FAIL: Execution of hook-pre-command.sh specify failed in ${ARCHIVE_PROJ_DIR}" >&2
+    exit 1
+  fi
+
+  echo "Executing lifecycle post-hook in installed project directory..."
+  if ! "${ARCHIVE_EXT_DIR}/scripts/hook-post-command.sh" specify 0; then
+    echo "FAIL: Execution of hook-post-command.sh specify 0 failed in ${ARCHIVE_PROJ_DIR}" >&2
+    exit 1
+  fi
+
+  if [[ ! -f "${ARCHIVE_PROJ_DIR}/specs/001-archive-feature/lifecycle.md" ]]; then
+    echo "FAIL: Lifecycle artifact was not created by hooks at ${ARCHIVE_PROJ_DIR}/specs/001-archive-feature/lifecycle.md" >&2
+    exit 1
+  fi
+
+  # Verify self-healing restored execute bits on lifecycle-engine.py
+  if [[ ! -x "${ARCHIVE_EXT_DIR}/scripts/lifecycle-engine.py" ]]; then
+    echo "FAIL: Runtime script lifecycle-engine.py is not executable after hook execution" >&2
+    exit 1
+  fi
+
+  echo "Verifying direct execution of lifecycle-engine.py --help..."
+  if ! "${ARCHIVE_EXT_DIR}/scripts/lifecycle-engine.py" --help >/dev/null; then
+    echo "FAIL: Direct execution of ${ARCHIVE_EXT_DIR}/scripts/lifecycle-engine.py --help failed" >&2
     exit 1
   fi
 )

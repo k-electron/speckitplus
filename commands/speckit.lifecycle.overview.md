@@ -25,5 +25,6 @@ Optional arguments:
 2. Inspect the generated overview at `.specify/lifecycle-overview.md` (or standard output).
 3. Check key information:
    - Summary counts: Features, Bugs, Assessments (in-flight vs completed)
-   - Active work table: Track, current phase, task completion progress, and next recommended action
+   - Active work table: Track, synchronized feature title, current phase, task completion progress, and next recommended action
+   - Completed work table (when `--all` is passed): Terminal phase and synchronized feature title
 4. Present a high-level summary to the user highlighting active items needing attention and next steps.

@@ -157,6 +157,77 @@ class TestLifecycleEngine(unittest.TestCase):
         title = engine.infer_title(slug_dir, "003-api-rate-limiter")
         self.assertEqual(title, "API Rate Limiter")
 
+    def test_infer_title_ignores_placeholders_and_falls_back_to_slug(self) -> None:
+        """Verify placeholder tokens like [FEATURE NAME] and UNTITLED are rejected in favor of slug fallback."""
+        feature_dir = self.temp_dir / "specs" / "004-dynamic-routing"
+        feature_dir.mkdir(parents=True)
+        (feature_dir / "spec.md").write_text(
+            "# Feature Specification: [FEATURE NAME]\n\n## Summary\nInitial draft.",
+            encoding="utf-8",
+        )
+
+        title = engine.infer_title(feature_dir, "004-dynamic-routing")
+        self.assertEqual(title, "Dynamic Routing")
+
+    def test_infer_title_normalizes_whitespace_and_brackets(self) -> None:
+        """Verify candidate titles wrapped in brackets or extra whitespace are cleaned."""
+        feature_dir = self.temp_dir / "specs" / "008-bracket-title"
+        feature_dir.mkdir(parents=True)
+        (feature_dir / "spec.md").write_text(
+            "# Feature Specification:   [Dynamic Multi-Cloud Orchestration Engine]   \n",
+            encoding="utf-8",
+        )
+
+        title = engine.infer_title(feature_dir, "008-bracket-title")
+        self.assertEqual(title, "Dynamic Multi-Cloud Orchestration Engine")
+
+    def test_infer_title_multi_track_headings(self) -> None:
+        """Verify canonical heading extraction across bug and assessment tracks."""
+        bug_dir = self.temp_dir / ".specify" / "bugs" / "001-socket-leak"
+        bug_dir.mkdir(parents=True)
+        (bug_dir / "bug.md").write_text(
+            "# Bug Report: Socket Descriptor Leak in Worker Pool\n",
+            encoding="utf-8",
+        )
+        self.assertEqual(
+            engine.infer_title(bug_dir, "001-socket-leak"),
+            "Socket Descriptor Leak in Worker Pool",
+        )
+
+        asm_dir = self.temp_dir / ".specify" / "assessments" / "001-graphql-eval"
+        asm_dir.mkdir(parents=True)
+        (asm_dir / "assessment.md").write_text(
+            "# Idea Assessment: GraphQL Migration Feasibility\n",
+            encoding="utf-8",
+        )
+        self.assertEqual(
+            engine.infer_title(asm_dir, "001-graphql-eval"),
+            "GraphQL Migration Feasibility",
+        )
+
+    def test_infer_title_rejects_lifecycle_placeholder(self) -> None:
+        """Verify placeholder in existing lifecycle.md is ignored and falls back to slug."""
+        target_dir = self.temp_dir / "specs" / "009-user-profile"
+        target_dir.mkdir(parents=True)
+        lifecycle_file = target_dir / "lifecycle.md"
+        fm = {
+            "track": "feature",
+            "slug": "009-user-profile",
+            "title": "[FEATURE NAME]",
+            "current_phase": "INITIALIZING",
+            "sub_status": "active",
+            "revision_count": 1,
+            "next_action": {"command": "/speckit-specify", "description": "Specify"},
+            "transitions": [],
+            "created_at": "2026-09-04T12:00:00Z",
+            "updated_at": "2026-09-04T12:00:00Z",
+        }
+        body = engine.render_markdown_body(fm)
+        engine.write_lifecycle_file(lifecycle_file, fm, body)
+
+        title = engine.infer_title(target_dir, "009-user-profile")
+        self.assertEqual(title, "User Profile")
+
     def test_resolve_context_via_feature_json(self) -> None:
         """Verify resolving repository active feature using isolated .specify/feature.json."""
         specify_dir = self.temp_dir / ".specify"

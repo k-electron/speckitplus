@@ -19,6 +19,12 @@ if [ ! -f "${ENGINE}" ]; then
   exit 1
 fi
 
+# Spec Kit CLI's safe archive extractor does not restore zip mode bits and only
+# runs chmod on *.sh, so the post-hook self-heals engine permissions on first run.
+if [ ! -x "${ENGINE}" ]; then
+  chmod +x "${ENGINE}" 2>/dev/null || true
+fi
+
 if [ -n "${TARGET_DIR}" ]; then
   python3 "${ENGINE}" complete "${COMMAND_NAME}" "${EXIT_CODE}" "${TARGET_DIR}" || {
     echo "[speckit-lifecycle] Error: Post-hook command completion failed for '${COMMAND_NAME}'" >&2

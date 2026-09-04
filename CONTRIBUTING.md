@@ -54,11 +54,11 @@ python3 -m py_compile scripts/lifecycle-engine.py tests/contract/*.py
 python3 -m unittest discover -s tests/contract -p "test_*.py"
 ```
 
-### 3. Full Regression Suite (All 9 Suites)
+### 3. Full Regression Suite (All 10 Suites)
 ```bash
 ./tests/run_all_tests.sh
 ```
-All 9 suites must pass with zero failures:
+All 10 suites must pass with zero failures:
 1. Python Contract Tests
 2. Integration: Multi-track Init (US1)
 3. Integration: Interruption Detection (US2)
@@ -68,6 +68,7 @@ All 9 suites must pass with zero failures:
 7. Integration: Dev Install & Packaging (US6)
 8. Integration: State Reconciliation & Interruption
 9. Integration: Release Archive Packaging (US2)
+10. Integration: Title Resolution & Bootstrapping
 
 ## Continuous Integration & Release Process
 
