@@ -574,13 +574,14 @@ class TestLifecycleEngine(unittest.TestCase):
         # Baseline: files timestamped prior to completed_at
         import os
         os.utime(spec_file, (1700000000, 1700000000))
+        os.utime(plan_file, (1700000010, 1700000010))
         advisory, is_new = engine.detect_artifact_drift(target_dir, fm)
         self.assertIsNone(advisory)
         self.assertFalse(is_new)
         self.assertEqual(fm["revision_count"], 1)
 
-        # Trigger drift: spec.md edited out-of-band well after 20:05:00Z (epoch 1788379500)
-        future_ts = 1788380000.0
+        # Trigger drift: spec.md edited out-of-band well after plan.md
+        future_ts = 1700000050.0
         os.utime(spec_file, (future_ts, future_ts))
         advisory, is_new = engine.detect_artifact_drift(target_dir, fm)
         self.assertIsNotNone(advisory)
@@ -624,15 +625,116 @@ class TestLifecycleEngine(unittest.TestCase):
                 },
             ],
         }
-        # Set spec.md and tasks.md prior to tasks completion, but plan.md strictly newer
+        # Set spec.md and tasks.md, but plan.md strictly newer than tasks.md
         os.utime(spec_file, (1700000000, 1700000000))
-        os.utime(tasks_file, (1700000000, 1700000000))
+        os.utime(tasks_file, (1700000010, 1700000010))
         os.utime(plan_file, (future_ts, future_ts))
         advisory_tasks, is_new_tasks = engine.detect_artifact_drift(target_dir, fm_tasks)
         self.assertIsNotNone(advisory_tasks)
         self.assertIn("plan.md was modified after tasks.md", advisory_tasks)
         self.assertTrue(is_new_tasks)
         self.assertEqual(fm_tasks["revision_count"], 3)
+
+    def test_direct_pairwise_mtime_spec_plan_drift(self) -> None:
+        """Verify spec.md vs plan.md direct mtime comparison and out-of-band plan edit clearing."""
+        target_dir = self.temp_dir / "specs" / "031-spec-plan-drift"
+        target_dir.mkdir(parents=True)
+        spec_file = target_dir / "spec.md"
+        plan_file = target_dir / "plan.md"
+        spec_file.write_text("# Spec", encoding="utf-8")
+        plan_file.write_text("# Plan", encoding="utf-8")
+
+        import os
+        # Case 1: plan.md newer than spec.md -> No drift
+        os.utime(spec_file, (1000.0, 1000.0))
+        os.utime(plan_file, (1010.0, 1010.0))
+        fm = {"track": "feature", "slug": "031-spec-plan-drift", "current_phase": "PLANNED", "drift_advisory": None, "revision_count": 1}
+        adv, is_new = engine.detect_artifact_drift(target_dir, fm)
+        self.assertIsNone(adv)
+        self.assertFalse(is_new)
+        self.assertIsNone(fm["drift_advisory"])
+
+        # Case 2: spec.md edited out-of-band to be newer than plan.md by >= 1.0s -> Drift detected
+        os.utime(spec_file, (1020.0, 1020.0))
+        adv, is_new = engine.detect_artifact_drift(target_dir, fm)
+        self.assertIsNotNone(adv)
+        self.assertIn("spec.md was modified after plan.md", adv)
+        self.assertTrue(is_new)
+        self.assertEqual(fm["revision_count"], 2)
+
+        # Case 3: plan.md edited out-of-band (e.g. analyze remediation) to be newer than spec.md -> Drift cleared
+        os.utime(plan_file, (1030.0, 1030.0))
+        adv, is_new = engine.detect_artifact_drift(target_dir, fm)
+        self.assertIsNone(adv)
+        self.assertFalse(is_new)
+        self.assertIsNone(fm["drift_advisory"])
+        self.assertEqual(fm["revision_count"], 2)
+
+    def test_direct_pairwise_mtime_plan_tasks_drift(self) -> None:
+        """Verify plan.md vs tasks.md direct mtime comparison and out-of-band tasks edit clearing."""
+        target_dir = self.temp_dir / "specs" / "032-plan-tasks-drift"
+        target_dir.mkdir(parents=True)
+        spec_file = target_dir / "spec.md"
+        plan_file = target_dir / "plan.md"
+        tasks_file = target_dir / "tasks.md"
+        spec_file.write_text("# Spec", encoding="utf-8")
+        plan_file.write_text("# Plan", encoding="utf-8")
+        tasks_file.write_text("- [ ] Task 1", encoding="utf-8")
+
+        import os
+        # Case 1: tasks.md newer than plan.md -> No drift
+        os.utime(spec_file, (1000.0, 1000.0))
+        os.utime(plan_file, (1010.0, 1010.0))
+        os.utime(tasks_file, (1020.0, 1020.0))
+        fm = {"track": "feature", "slug": "032-plan-tasks-drift", "current_phase": "TASKED", "drift_advisory": None, "revision_count": 1}
+        adv, is_new = engine.detect_artifact_drift(target_dir, fm)
+        self.assertIsNone(adv)
+        self.assertFalse(is_new)
+        self.assertIsNone(fm["drift_advisory"])
+
+        # Case 2: plan.md edited out-of-band to be newer than tasks.md by >= 1.0s -> Drift detected
+        os.utime(plan_file, (1030.0, 1030.0))
+        adv, is_new = engine.detect_artifact_drift(target_dir, fm)
+        self.assertIsNotNone(adv)
+        self.assertIn("plan.md was modified after tasks.md", adv)
+        self.assertTrue(is_new)
+        self.assertEqual(fm["revision_count"], 2)
+
+        # Case 3: tasks.md updated to be newer than plan.md -> Drift cleared
+        os.utime(tasks_file, (1040.0, 1040.0))
+        adv, is_new = engine.detect_artifact_drift(target_dir, fm)
+        self.assertIsNone(adv)
+        self.assertFalse(is_new)
+        self.assertIsNone(fm["drift_advisory"])
+        self.assertEqual(fm["revision_count"], 2)
+
+    def test_compute_next_action_terminal_phase_immunity(self) -> None:
+        """Verify terminal phases (CONVERGED, VERIFIED, DECIDED_GO, DECIDED_KILL) are immune to drift latching."""
+        # Converged feature with drift advisory must still return Complete
+        act_conv = engine.compute_next_action(
+            "feature",
+            "CONVERGED",
+            progress={"tasks_total": 10, "tasks_completed": 10, "percent": 100},
+            drift_advisory="spec.md was modified after plan.md was generated. Review plan or run /speckit-plan.",
+        )
+        self.assertEqual(act_conv["command"], "Complete")
+        self.assertIn("converged and verified", act_conv["description"])
+
+        # Verified bug with drift advisory must return Resolved
+        act_ver = engine.compute_next_action(
+            "bug",
+            "VERIFIED",
+            drift_advisory="spec.md was modified after plan.md was generated. Review plan or run /speckit-plan.",
+        )
+        self.assertEqual(act_ver["command"], "Resolved")
+
+        # Decided assessment with drift advisory must return /speckit-specify (hand-off to feature)
+        act_decided = engine.compute_next_action(
+            "assessment",
+            "DECIDED_GO",
+            drift_advisory="spec.md was modified after plan.md was generated. Review plan or run /speckit-plan.",
+        )
+        self.assertEqual(act_decided["command"], "/speckit-specify")
 
     def test_compute_next_action_drift_and_progress_rules(self) -> None:
         """Verify Next Recommended Action rules across drift advisories and task progress ratios."""

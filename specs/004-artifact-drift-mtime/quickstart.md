@@ -102,14 +102,16 @@ Verify that features in `CONVERGED` phase report `Complete` as next action and d
 2. Populate `lifecycle.md` with `CONVERGED` phase and completed tasks:
    ```bash
    python3 -c "
-   import json
+   import sys, importlib
    from pathlib import Path
-   import scripts.lifecycle_engine as engine
+   sys.path.insert(0, 'scripts')
+   engine = importlib.import_module('lifecycle-engine')
 
    fm, body = engine.read_lifecycle_file(Path('${FEATURE_DIR}/lifecycle.md'))
    fm['current_phase'] = 'CONVERGED'
    fm['sub_status'] = 'converged'
-   fm['drift_advisory'] = None
+   fm['drift_advisory'] = 'spec.md was modified after plan.md was generated. Review plan or run /speckit-plan.'
+   fm['next_action'] = engine.compute_next_action('feature', 'CONVERGED', drift_advisory=fm['drift_advisory'])
    engine.write_lifecycle_file(Path('${FEATURE_DIR}/lifecycle.md'), fm, body)
    "
    ```

@@ -350,6 +350,7 @@ echo "Scenario 5: Soft drift resolution via plan re-run"
 echo "----------------------------------------------------------------------"
 
 echo "Re-running pre-hook for 'plan'..."
+rm -f "${TASKS_FILE}"
 if ! pre_replan_out=$("${PRE_HOOK}" plan "${TARGET_DIR}" 2>&1); then
   echo "FAIL: Pre-hook execution failed on plan re-run" >&2
   echo "${pre_replan_out}" >&2
