@@ -5,6 +5,21 @@ All notable changes to the **SDLC Lifecycle State Tracker** extension will be do
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-09-04
+
+### Fixed
+
+- **Direct Pairwise File `mtime` Comparison**:
+  - Replaced historical transition event timestamp lookup in `detect_artifact_drift()` with direct filesystem modification time comparison (`os.path.getmtime`) between `spec.md` and `plan.md`, and between `plan.md` and `tasks.md`.
+  - Resolves false-positive backwards drift advisories where out-of-band edits to downstream artifacts (e.g. during `/speckit-analyze` remediation) previously triggered spurious warnings claiming upstream artifacts were newer.
+  - Dynamically clears existing `drift_advisory` to `null` when downstream artifacts are updated to be synchronized with or newer than upstream files.
+  - Incorporated a `1.0s` clock-skew threshold buffer to accommodate sub-second filesystem timestamp precision differences and execution jitter.
+- **Terminal Phase Drift Immunity & Phase Latch Prevention**:
+  - Guarded terminal and completion phases (`CONVERGED`, `VERIFIED`, `DECIDED_GO`, `DECIDED_KILL`) in `compute_next_action()` against drift-induced next action overrides.
+  - Features with 100% completed tasks at `CONVERGED` now consistently report `Complete` rather than latching into `/speckit-plan`.
+- **Codebase Pruning**:
+  - Removed unreferenced `_find_completed_timestamp` helper function from the lifecycle engine.
+
 ## [1.1.0] - 2026-09-04
 
 ### Added

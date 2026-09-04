@@ -1116,21 +1116,6 @@ def _parse_iso_timestamp(ts_str: str | None) -> float | None:
         return None
 
 
-def _find_completed_timestamp(transitions: list[dict[str, Any]], phase_name: str, cmd_keyword: str) -> float | None:
-    # Reverse traversal targets the latest completed attempt when commands have been retried or replanned
-    for t in reversed(transitions):
-        if not isinstance(t, dict):
-            continue
-        if t.get("status") == "COMPLETED":
-            p = (t.get("phase") or "").upper()
-            cmd = (t.get("command") or "").lower()
-            if p == phase_name.upper() or cmd_keyword.lower() in cmd:
-                ts = _parse_iso_timestamp(t.get("completed_at"))
-                if ts is not None:
-                    return ts
-    return None
-
-
 def detect_artifact_drift(target_dir: Path | str, frontmatter: dict[str, Any]) -> tuple[str | None, bool]:
     p = Path(target_dir)
     spec_file = p / "spec.md"
