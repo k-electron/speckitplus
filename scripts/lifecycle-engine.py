@@ -563,26 +563,66 @@ def infer_slug(target_dir: Path) -> str:
     return target_dir.name
 
 
+PLACEHOLDER_TOKENS: set[str] = {
+    "FEATURE NAME",
+    "FEATURE_NAME",
+    "FEATURE TITLE",
+    "FEATURE_TITLE",
+    "UNTITLED",
+    "FEATURE",
+    "TITLE",
+}
+
+
+def _normalize_title_candidate(candidate: str) -> str:
+    cand = candidate.strip()
+    while (cand.startswith("[") and cand.endswith("]")) or (cand.startswith("`") and cand.endswith("`")):
+        cand = cand[1:-1].strip()
+    return cand
+
+
 def infer_title(target_dir: Path, slug: str | None = None) -> str:
-    spec_md = target_dir / "spec.md"
-    if spec_md.is_file():
+    track = determine_track(target_dir)
+    primary_files: list[str] = []
+    if track == "feature":
+        primary_files = ["spec.md"]
+    elif track == "bug":
+        primary_files = ["bug.md", "report.md", "spec.md"]
+    elif track == "assessment":
+        primary_files = ["assessment.md", "intake.md", "spec.md"]
+    else:
+        primary_files = ["spec.md", "bug.md", "report.md", "assessment.md", "intake.md"]
+
+    for fname in primary_files:
+        doc_file = target_dir / fname
+        if not doc_file.is_file():
+            continue
         try:
-            content = spec_md.read_text(encoding="utf-8")
+            content = doc_file.read_text(encoding="utf-8")
             for line in content.splitlines():
                 line = line.strip()
-                if line.startswith("#"):
-                    m = re.match(
-                        r"^#\s+(?:Feature\s+Specification|Specification|SDLC\s+Lifecycle):\s*(.+)$",
-                        line,
-                        re.IGNORECASE,
-                    )
-                    if m:
-                        return m.group(1).strip()
-                    m = re.match(r"^#\s+(.+)$", line)
-                    if m:
-                        candidate = m.group(1).strip()
-                        if candidate and not candidate.lower().startswith("tasks"):
-                            return candidate
+                if not line.startswith("#"):
+                    continue
+                m = re.match(
+                    r"^#\s+(?:Feature\s+Specification|Specification|SDLC\s+Lifecycle|Bug\s+Report|Bug|Idea\s+Assessment):\s*(.+)$",
+                    line,
+                    re.IGNORECASE,
+                )
+                if m:
+                    candidate = _normalize_title_candidate(m.group(1))
+                    if candidate and candidate.upper() not in PLACEHOLDER_TOKENS:
+                        return candidate
+                    continue
+
+                m = re.match(r"^#\s+(.+)$", line)
+                if m:
+                    candidate = _normalize_title_candidate(m.group(1))
+                    if (
+                        candidate
+                        and candidate.upper() not in PLACEHOLDER_TOKENS
+                        and not candidate.lower().startswith(("tasks", "clarification"))
+                    ):
+                        return candidate
         except Exception:
             pass
 
@@ -590,16 +630,19 @@ def infer_title(target_dir: Path, slug: str | None = None) -> str:
     if lifecycle_md.is_file():
         try:
             fm, _ = read_lifecycle_file(lifecycle_md)
-            if fm.get("title") and fm["title"] != "[FEATURE_TITLE]":
-                return fm["title"]
+            existing_title = fm.get("title")
+            if existing_title and isinstance(existing_title, str):
+                cleaned_title = _normalize_title_candidate(existing_title)
+                if cleaned_title and cleaned_title.upper() not in PLACEHOLDER_TOKENS:
+                    return cleaned_title
         except Exception:
             pass
 
     s = slug or infer_slug(target_dir)
     clean = re.sub(r"^\d{3}-", "", s)
     words = clean.replace("-", " ").replace("_", " ").split()
-    acronyms = {"sdlc", "cli", "api", "ui", "ux", "json", "yaml", "html", "css"}
-    formatted_words = [w.upper() if w.lower() in acronyms else w.capitalize() for w in words]
+    acronyms = {"SDLC", "CLI", "API", "UI", "UX", "JSON", "YAML", "HTML", "CSS"}
+    formatted_words = [w.upper() if w.upper() in acronyms else w.capitalize() for w in words]
     return " ".join(formatted_words) if formatted_words else s
 
 
@@ -1276,7 +1319,6 @@ def reconcile_lifecycle(
     resolved_dir = resolve_target_dir(target_dir, repo_root) if target_dir else resolve_target_dir(None, repo_root)
     track = determine_track(resolved_dir, repo_root)
     slug = infer_slug(resolved_dir)
-    title = infer_title(resolved_dir, slug)
     lifecycle_path = resolved_dir / "lifecycle.md"
 
     existing_fm: dict[str, Any] | None = None
@@ -1289,7 +1331,22 @@ def reconcile_lifecycle(
     if existing_fm:
         track = existing_fm.get("track", track)
         slug = existing_fm.get("slug", slug)
-        title = existing_fm.get("title", title)
+
+    inferred_title = infer_title(resolved_dir, slug)
+    cleaned_inferred = _normalize_title_candidate(inferred_title)
+    is_inferred_valid = bool(inferred_title and cleaned_inferred.upper() not in PLACEHOLDER_TOKENS)
+
+    existing_title = existing_fm.get("title") if existing_fm else None
+    cleaned_existing = _normalize_title_candidate(existing_title) if existing_title else ""
+    is_existing_valid = bool(existing_title and cleaned_existing.upper() not in PLACEHOLDER_TOKENS)
+
+    # Prioritize genuine non-placeholder title from infer_title over stale placeholders or obsolete titles
+    if is_inferred_valid:
+        title = inferred_title
+    elif is_existing_valid:
+        title = existing_title
+    else:
+        title = inferred_title or slug
 
     now_epoch = datetime.datetime.now(datetime.timezone.utc).timestamp()
     milestones_to_add: list[tuple[str, str, float, str]] = []
@@ -1591,6 +1648,7 @@ def start_milestone(
     target_dir: str | Path | None = None,
     repo_root: Path | None = None,
 ) -> dict[str, Any]:
+    original_target_dir = target_dir
     if target_dir:
         p = Path(target_dir)
         if p.is_file():
@@ -1607,14 +1665,41 @@ def start_milestone(
     title = infer_title(resolved_dir, slug)
     lifecycle_path = resolved_dir / "lifecycle.md"
 
+    clean_cmd = normalize_command_name(command_name)
+    cmd_stored = f"speckit.{clean_cmd}"
+
+    if clean_cmd == "specify" and original_target_dir is None:
+        feature_json = repo_root / ".specify" / "feature.json"
+        if feature_json.is_file() and lifecycle_path.is_file():
+            try:
+                fm_check, _ = read_lifecycle_file(lifecycle_path)
+                sub_status = fm_check.get("sub_status", "")
+                curr_phase = fm_check.get("current_phase", "")
+                if sub_status == "converged" or curr_phase in ("CONVERGED", "VERIFIED"):
+                    sys.stderr.write(
+                        "[speckit-lifecycle] Notice: Active feature in .specify/feature.json is converged. Skipping pre-hook mutation for new specification.\n"
+                    )
+                    return {
+                        "bypassed": True,
+                        "reason": "converged_feature",
+                        "lifecycle_path": str(lifecycle_path),
+                        "track": track,
+                        "phase": "SPECIFIED",
+                        "command": cmd_stored,
+                        "status": "BYPASSED",
+                        "slug": slug,
+                        "title": title,
+                        "current_phase": curr_phase or "CONVERGED",
+                        "sub_status": sub_status or "converged",
+                    }
+            except Exception:
+                pass
+
     if not lifecycle_path.is_file():
         reconcile_lifecycle(resolved_dir, repo_root=repo_root, write_file=True)
 
     frontmatter, _ = read_lifecycle_file(lifecycle_path)
     track = frontmatter.get("track", track)
-
-    clean_cmd = normalize_command_name(command_name)
-    cmd_stored = f"speckit.{clean_cmd}"
     phase = get_phase_for_command(clean_cmd, track)
 
     now_dt = datetime.datetime.now(datetime.timezone.utc)
@@ -1716,6 +1801,15 @@ def complete_milestone(
 
     frontmatter, _ = read_lifecycle_file(lifecycle_path)
     track = frontmatter.get("track", track)
+
+    canonical_title = infer_title(resolved_dir, slug)
+    cleaned_canonical = _normalize_title_candidate(canonical_title)
+    if (
+        canonical_title
+        and cleaned_canonical.upper() not in PLACEHOLDER_TOKENS
+        and frontmatter.get("title") != canonical_title
+    ):
+        frontmatter["title"] = canonical_title
 
     clean_cmd = normalize_command_name(command_name)
     cmd_stored = f"speckit.{clean_cmd}"
@@ -1884,6 +1978,15 @@ def sense_artifacts(
     frontmatter, _ = read_lifecycle_file(lifecycle_path)
     track = frontmatter.get("track", track)
     phase = frontmatter.get("current_phase", "INITIALIZING")
+
+    inferred_title = infer_title(resolved_dir, slug)
+    cleaned_inferred = _normalize_title_candidate(inferred_title)
+    if (
+        inferred_title
+        and cleaned_inferred.upper() not in PLACEHOLDER_TOKENS
+        and frontmatter.get("title") != inferred_title
+    ):
+        frontmatter["title"] = inferred_title
 
     progress = compute_task_progress(resolved_dir)
     frontmatter["progress"] = progress
@@ -2129,35 +2232,37 @@ def render_overview_markdown(
     lines.append("")
     lines.append("## Active Work")
     lines.append("")
-    lines.append("| Slug | Track | Current Phase | Progress | Next Recommended Action | Last Updated |")
-    lines.append("|---|---|---|---|---|---|")
+    lines.append("| Title | Slug | Track | Current Phase | Progress | Next Recommended Action | Last Updated |")
+    lines.append("|---|---|---|---|---|---|---|")
 
     if active_work:
         for item in active_work:
             slug = item["slug"]
+            title = item.get("title") or slug
             track_name = item["track"].capitalize()
             phase = item["current_phase"]
             pct = item.get("progress", {}).get("percent", 0)
             next_action = item.get("next_action", {})
             next_cmd = next_action.get("command") or next_action.get("description") or "-"
             updated_ts = _format_table_timestamp(item.get("updated_at", ""))
-            lines.append(f"| `{slug}` | {track_name} | `{phase}` | {pct}% | {next_cmd} | {updated_ts} |")
+            lines.append(f"| {title} | `{slug}` | {track_name} | `{phase}` | {pct}% | {next_cmd} | {updated_ts} |")
 
     if include_all and completed_work:
         lines.append("")
         lines.append("## Completed Work")
         lines.append("")
-        lines.append("| Slug | Track | Current Phase | Progress | Next Recommended Action | Last Updated |")
-        lines.append("|---|---|---|---|---|---|")
+        lines.append("| Title | Slug | Track | Current Phase | Progress | Next Recommended Action | Last Updated |")
+        lines.append("|---|---|---|---|---|---|---|")
         for item in completed_work:
             slug = item["slug"]
+            title = item.get("title") or slug
             track_name = item["track"].capitalize()
             phase = item["current_phase"]
             pct = item.get("progress", {}).get("percent", 0)
             next_action = item.get("next_action", {})
             next_cmd = next_action.get("command") or next_action.get("description") or "Complete"
             updated_ts = _format_table_timestamp(item.get("updated_at", ""))
-            lines.append(f"| `{slug}` | {track_name} | `{phase}` | {pct}% | {next_cmd} | {updated_ts} |")
+            lines.append(f"| {title} | `{slug}` | {track_name} | `{phase}` | {pct}% | {next_cmd} | {updated_ts} |")
 
     lines.append("")
     return "\n".join(lines)
@@ -2179,11 +2284,12 @@ def format_overview_text(overview_data: dict[str, Any], include_all: bool = Fals
         for item in active_work:
             track_name = item["track"].capitalize()
             slug = item["slug"]
+            title = item.get("title") or slug
             phase = item["current_phase"]
             pct = item.get("progress", {}).get("percent", 0)
             next_action = item.get("next_action", {})
             next_cmd = next_action.get("command") or next_action.get("description") or "-"
-            lines.append(f"  [{track_name}] {slug} | Phase: {phase} | Progress: {pct}% | Next: {next_cmd}")
+            lines.append(f"  [{track_name}] {title} ({slug}) | Phase: {phase} | Progress: {pct}% | Next: {next_cmd}")
     else:
         lines.append("  (None)")
 
@@ -2231,7 +2337,12 @@ def compile_overview(
 
         item_track = fm.get("track") or determine_track(path.parent, repo_root)
         slug = fm.get("slug") or infer_slug(path.parent)
-        title = fm.get("title") or infer_title(path.parent, slug)
+        raw_title = fm.get("title")
+        cleaned_raw = _normalize_title_candidate(raw_title) if raw_title else ""
+        if (not raw_title) or (cleaned_raw.upper() in PLACEHOLDER_TOKENS):
+            title = infer_title(path.parent, slug)
+        else:
+            title = raw_title
         current_phase = fm.get("current_phase", "INITIALIZING")
         sub_status = fm.get("sub_status", "active")
         revision_count = fm.get("revision_count", 1)
@@ -2573,13 +2684,20 @@ def main() -> int:
             if args.json:
                 print(json.dumps(res, indent=2))
             else:
-                if res.get("interruption_detected"):
-                    print(f"Warning: Previous operation interrupted. Status updated in {res['lifecycle_path']}")
-                print(f"SDLC Track:    {res['track']}")
-                print(f"Phase:         {res['phase']}")
-                print(f"Command:       {res['command']}")
-                print(f"Status:        IN_PROGRESS")
-                print(f"Lifecycle:     {res['lifecycle_path']}")
+                if res.get("bypassed"):
+                    print(f"SDLC Track:    {res['track']}")
+                    print(f"Phase:         {res['phase']}")
+                    print(f"Command:       {res['command']}")
+                    print(f"Status:        BYPASSED")
+                    print(f"Lifecycle:     {res['lifecycle_path']}")
+                else:
+                    if res.get("interruption_detected"):
+                        print(f"Warning: Previous operation interrupted. Status updated in {res['lifecycle_path']}")
+                    print(f"SDLC Track:    {res['track']}")
+                    print(f"Phase:         {res['phase']}")
+                    print(f"Command:       {res['command']}")
+                    print(f"Status:        IN_PROGRESS")
+                    print(f"Lifecycle:     {res['lifecycle_path']}")
             return 0
 
         if args.subcommand == "complete":

@@ -104,6 +104,10 @@ run_suite "Integration: State Reconciliation & Interruption" \
 run_suite "Integration: Release Archive Packaging (US2)" \
   ./tests/integration/test_release_packaging.sh
 
+# 10. Title Resolution & Spec Bootstrapping Integration Test
+run_suite "Integration: Title Resolution & Bootstrapping" \
+  ./tests/integration/test_title_resolution.sh
+
 TOTAL_DURATION=$(( SECONDS - TOTAL_START ))
 
 # Final Summary Report

@@ -10,8 +10,8 @@
 
 **Purpose**: Initialize contract test fixtures and integration test harness for title resolution.
 
-- [ ] T001 Initialize contract test fixtures for title resolution in `tests/contract/test_title_resolution.py`
-- [ ] T002 [P] Create integration test harness for title synchronization in `tests/integration/test_title_resolution.sh`
+- [x] T001 Initialize contract test fixtures for title resolution in `tests/contract/test_title_resolution.py`
+- [x] T002 [P] Create integration test harness for title synchronization in `tests/integration/test_title_resolution.sh`
 
 ---
 
@@ -21,9 +21,9 @@
 
 **⚠️ CRITICAL**: Must be completed before User Story implementations.
 
-- [ ] T003 Implement placeholder token filtering and normalization (`PLACEHOLDER_TOKENS`) in `scripts/lifecycle-engine.py`
-- [ ] T004 Update `infer_title` in `scripts/lifecycle-engine.py` to reject placeholders and prioritize canonical markdown headings across tracks (`spec.md`, `bug.md`, `assessment.md`) (depends on T003)
-- [ ] T005 [P] Unit contract tests verifying placeholder rejection and heading parsing in `tests/contract/test_lifecycle_engine.py` (depends on T003, T004)
+- [x] T003 Implement placeholder token filtering and normalization (`PLACEHOLDER_TOKENS`) in `scripts/lifecycle-engine.py`
+- [x] T004 Update `infer_title` in `scripts/lifecycle-engine.py` to reject placeholders and prioritize canonical markdown headings across tracks (`spec.md`, `bug.md`, `assessment.md`) (depends on T003)
+- [x] T005 [P] Unit contract tests verifying placeholder rejection and heading parsing in `tests/contract/test_lifecycle_engine.py` (depends on T003, T004)
 
 **Checkpoint**: Placeholder filtering and canonical title inference ready — milestone synchronization can now be implemented.
 
@@ -36,10 +36,10 @@
 **Independent Test**: Create a feature with placeholder, edit `spec.md` with real title `# Feature Specification: Real Title`, run `./scripts/hook-post-command.sh specify 0`, and confirm `lifecycle.md` and `.specify/lifecycle-overview.md` reflect `Real Title`.
 
 ### Implementation for User Story 1
-- [ ] T006 [P] [US1] Contract test for milestone completion title synchronization in `tests/contract/test_title_resolution.py` (depends on T001, T004)
-- [ ] T007 [US1] Update `complete_milestone` in `scripts/lifecycle-engine.py` to re-infer title and update `frontmatter["title"]` and markdown header (depends on T004, T006)
-- [ ] T008 [US1] Ensure `compile_overview` in `scripts/lifecycle-engine.py` propagates the newly synchronized title to `.specify/lifecycle-overview.md` (depends on T007)
-- [ ] T009 [US1] Integration test validating end-to-end `speckit.specify` post-hook title synchronization in `tests/integration/test_title_resolution.sh` (depends on T002, T007, T008)
+- [x] T006 [P] [US1] Contract test for milestone completion title synchronization in `tests/contract/test_title_resolution.py` (depends on T001, T004)
+- [x] T007 [US1] Update `complete_milestone` in `scripts/lifecycle-engine.py` to re-infer title and update `frontmatter["title"]` and markdown header (depends on T004, T006)
+- [x] T008 [US1] Ensure `compile_overview` in `scripts/lifecycle-engine.py` propagates the newly synchronized title to `.specify/lifecycle-overview.md` (depends on T007)
+- [x] T009 [US1] Integration test validating end-to-end `speckit.specify` post-hook title synchronization in `tests/integration/test_title_resolution.sh` (depends on T002, T007, T008)
 
 **Checkpoint**: User Story 1 (MVP) complete. Newly specified features automatically ingest their true title into the lifecycle artifact and overview upon specification completion.
 
@@ -52,10 +52,10 @@
 **Independent Test**: Point `.specify/feature.json` to a converged feature, run `lifecycle-engine.py start specify` without arguments, verify exit code 0 and zero changes to the converged feature's `lifecycle.md`.
 
 ### Implementation for User Story 2
-- [ ] T010 [P] [US2] Contract test for converged feature pre-hook bypass in `tests/contract/test_title_resolution.py` (depends on T001)
-- [ ] T011 [US2] Update `resolve_target_dir` and `start_milestone` in `scripts/lifecycle-engine.py` to detect converged features and safely bypass without mutation when `command == specify` (depends on T010)
-- [ ] T012 [US2] Update `scripts/hook-pre-command.sh` to support explicit target directory passthrough and handle clean exit codes (depends on T011)
-- [ ] T013 [US2] Integration test validating safe pre-hook bypass for converged features in `tests/integration/test_title_resolution.sh` (depends on T002, T011, T012)
+- [x] T010 [P] [US2] Contract test for converged feature pre-hook bypass in `tests/contract/test_title_resolution.py` (depends on T001)
+- [x] T011 [US2] Update `resolve_target_dir` and `start_milestone` in `scripts/lifecycle-engine.py` to detect converged features and safely bypass without mutation when `command == specify` (depends on T010)
+- [x] T012 [US2] Update `scripts/hook-pre-command.sh` to support explicit target directory passthrough and handle clean exit codes (depends on T011)
+- [x] T013 [US2] Integration test validating safe pre-hook bypass for converged features in `tests/integration/test_title_resolution.sh` (depends on T002, T011, T012)
 
 **Checkpoint**: User Story 2 complete. Pre-hook execution is safe and idempotent when initiating new features in workspaces with existing completed work.
 
@@ -68,9 +68,9 @@
 **Independent Test**: Rename title in `spec.md`, run `lifecycle-engine.py sense` or `hook-post-command.sh plan 0`, verify `lifecycle.md` frontmatter and heading update without altering transition histories.
 
 ### Implementation for User Story 3
-- [ ] T014 [P] [US3] Contract test for non-destructive title updates during downstream milestones in `tests/contract/test_title_resolution.py` (depends on T001, T007)
-- [ ] T015 [US3] Update `sense_artifacts` and `reconcile_lifecycle` in `scripts/lifecycle-engine.py` to synchronize renamed titles non-destructively (depends on T007, T014)
-- [ ] T016 [US3] Integration test verifying title updates across `clarify`, `plan`, and `sense` in `tests/integration/test_title_resolution.sh` (depends on T002, T015)
+- [x] T014 [P] [US3] Contract test for non-destructive title updates during downstream milestones in `tests/contract/test_title_resolution.py` (depends on T001, T007)
+- [x] T015 [US3] Update `sense_artifacts` and `reconcile_lifecycle` in `scripts/lifecycle-engine.py` to synchronize renamed titles non-destructively (depends on T007, T014)
+- [x] T016 [US3] Integration test verifying title updates across `clarify`, `plan`, and `sense` in `tests/integration/test_title_resolution.sh` (depends on T002, T015)
 
 **Checkpoint**: User Story 3 complete. Title changes in `spec.md` flow seamlessly into lifecycle state across all SDLC phases without metadata drift.
 
@@ -80,10 +80,10 @@
 
 **Purpose**: Test suite orchestration, documentation updates, and quickstart validation.
 
-- [ ] T017 Register `tests/integration/test_title_resolution.sh` into `tests/run_all_tests.sh` (depends on T009, T013, T016)
-- [ ] T018 Configure executable permissions (`chmod +x`) on `tests/integration/test_title_resolution.sh` (depends on T002)
-- [ ] T019 [P] Update `commands/speckit.lifecycle.status.md` and `commands/speckit.lifecycle.overview.md` documentation with title synchronization behavior (depends on T007, T015)
-- [ ] T020 Run full regression orchestrator `./tests/run_all_tests.sh` and validate all quickstart scenarios in `specs/003-lifecycle-title-resolution/quickstart.md` (depends on T017, T018)
+- [x] T017 Register `tests/integration/test_title_resolution.sh` into `tests/run_all_tests.sh` (depends on T009, T013, T016)
+- [x] T018 Configure executable permissions (`chmod +x`) on `tests/integration/test_title_resolution.sh` (depends on T002)
+- [x] T019 [P] Update `commands/speckit.lifecycle.status.md` and `commands/speckit.lifecycle.overview.md` documentation with title synchronization behavior (depends on T007, T015)
+- [x] T020 Run full regression orchestrator `./tests/run_all_tests.sh` and validate all quickstart scenarios in `specs/003-lifecycle-title-resolution/quickstart.md` (depends on T017, T018)
 
 ---
 

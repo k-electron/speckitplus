@@ -1,6 +1,6 @@
 # Repository SDLC Overview
 
-**Last Updated**: 2026-09-04 16:17 UTC
+**Last Updated**: 2026-09-04 17:58 UTC
 
 | Track | Active Items | Completed Items |
 |---|---|---|
@@ -10,6 +10,13 @@
 
 ## Active Work
 
-| Slug | Track | Current Phase | Progress | Next Recommended Action | Last Updated |
-|---|---|---|---|---|---|
-| `003-lifecycle-title-resolution` | Feature | `TASKED` | 0% | /speckit-implement | 2026-09-04 16:17 |
+| Title | Slug | Track | Current Phase | Progress | Next Recommended Action | Last Updated |
+|---|---|---|---|---|---|---|
+| Lifecycle Title Resolution & Pre-Hook Spec Bootstrapping | `003-lifecycle-title-resolution` | Feature | `IMPLEMENTING` | 100% | /speckit-converge | 2026-09-04 17:58 |
+
+## Completed Work
+
+| Title | Slug | Track | Current Phase | Progress | Next Recommended Action | Last Updated |
+|---|---|---|---|---|---|---|
+| SDLC Lifecycle State Artifact Extension | `001-sdlc-lifecycle-tracker` | Feature | `CONVERGED` | 100% | Complete | 2026-09-03 10:56 |
+| GitHub CI & Native Release Automation | `002-github-ci-release` | Feature | `CONVERGED` | 100% | Complete | 2026-09-03 16:52 |
