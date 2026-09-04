@@ -2195,6 +2195,7 @@ def discover_lifecycle_artifacts(repo_root: Path) -> list[Path]:
         ".ruff_cache",
         "dist",
         "build",
+        "extensions",
     }
     discovered: list[Path] = []
     for root, dirs, files in os.walk(repo_root):
