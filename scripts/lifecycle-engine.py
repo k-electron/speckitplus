@@ -1116,39 +1116,21 @@ def _parse_iso_timestamp(ts_str: str | None) -> float | None:
         return None
 
 
-def _find_completed_timestamp(transitions: list[dict[str, Any]], phase_name: str, cmd_keyword: str) -> float | None:
-    # Reverse traversal targets the latest completed attempt when commands have been retried or replanned
-    for t in reversed(transitions):
-        if not isinstance(t, dict):
-            continue
-        if t.get("status") == "COMPLETED":
-            p = (t.get("phase") or "").upper()
-            cmd = (t.get("command") or "").lower()
-            if p == phase_name.upper() or cmd_keyword.lower() in cmd:
-                ts = _parse_iso_timestamp(t.get("completed_at"))
-                if ts is not None:
-                    return ts
-    return None
-
-
 def detect_artifact_drift(target_dir: Path | str, frontmatter: dict[str, Any]) -> tuple[str | None, bool]:
     p = Path(target_dir)
     spec_file = p / "spec.md"
     plan_file = p / "plan.md"
     tasks_file = p / "tasks.md"
 
-    transitions = frontmatter.get("transitions") or []
     drift_advisory: str | None = None
 
     # A 1.0s threshold buffer prevents false positives arising from sub-second timestamp truncation in ISO-8601 strings
     if spec_file.is_file() and plan_file.is_file():
-        plan_ts = _find_completed_timestamp(transitions, "PLANNED", "plan")
-        if plan_ts is not None and (os.path.getmtime(spec_file) - plan_ts) >= 1.0:
+        if (os.path.getmtime(spec_file) - os.path.getmtime(plan_file)) >= 1.0:
             drift_advisory = "spec.md was modified after plan.md was generated. Review plan or run /speckit-plan."
 
     if not drift_advisory and plan_file.is_file() and tasks_file.is_file():
-        tasks_ts = _find_completed_timestamp(transitions, "TASKED", "tasks")
-        if tasks_ts is not None and (os.path.getmtime(plan_file) - tasks_ts) >= 1.0:
+        if (os.path.getmtime(plan_file) - os.path.getmtime(tasks_file)) >= 1.0:
             drift_advisory = "plan.md was modified after tasks.md was generated. Review tasks or run /speckit-tasks."
 
     existing_drift = frontmatter.get("drift_advisory")
@@ -1221,6 +1203,10 @@ def compute_next_action(
         current_phase = phase or "INITIALIZING"
         prog = progress
         drift = drift_advisory
+
+    # Terminal phases take precedence: completed work is complete
+    if current_phase in ("CONVERGED", "VERIFIED", "DECIDED_GO", "DECIDED_KILL"):
+        return get_next_action(track, current_phase)
 
     # Upstream drift remediation takes priority over downstream phase execution
     if drift:

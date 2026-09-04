@@ -2,7 +2,7 @@ schema_version: "1.0"
 extension:
   id: "lifecycle"
   name: "SDLC Lifecycle State Tracker"
-  version: "1.1.0"
+  version: "1.1.1"
   description: "Living SDLC state artifact tracker and workspace overview for Spec Kit features, bugs, and idea assessments"
   author: "Spec Kit Community"
   repository: "https://github.com/k-electron/speckitplus"
