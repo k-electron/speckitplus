@@ -87,7 +87,7 @@ This produces:
 Excluded from release archives: `tests/`, `specs/`, `.github/`, caches, and editor metadata.
 
 ### Cutting a Release (`.github/workflows/release.yml`)
-1. Update version in `extension.yml` and `catalog-submission.json`.
+1. Update version in `extension.yml`, `catalog-submission.json`, and `README.md` (badges, download URLs, and CLI output examples).
 2. Add release notes under `## [<version>] - YYYY-MM-DD` in `CHANGELOG.md`.
 3. Commit and push to `main`:
    ```bash
